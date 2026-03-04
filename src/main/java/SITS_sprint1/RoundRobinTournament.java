@@ -37,13 +37,13 @@ public class RoundRobinTournament extends Tournament
 		}
 	
 	
-		//Overall Winner: highest record, tie-breaker by score
+		
 		Robot best = participants.get(0);
 		
 		for (Robot r : participants) {
 			if (r.record > best.record) {
 				best = r;
-			}else if (r.record == best.record && r.score > best.score) { //this else if is not in new version maybe
+			}else if (r.record == best.record && r.score > best.score) { 
 				best = r;
 			}
 		}
