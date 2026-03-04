@@ -95,8 +95,8 @@ public class PersonEmployeePayrollTest
         assertEquals(950f, pay1, EPS);  // verifies employee overtime calculation
         assertEquals(1200f, pay2, EPS); // verifies salary employee fixed 40-hour pay
 
-        assertEquals(PersonEmployeePayroll.EmployedType.CONTRACTORS, workers[0].getEmployedType()); // confirms contractor type via polymorphism
-        assertEquals(PersonEmployeePayroll.EmployedType.EMPLOYEES, workers[1].getEmployedType());   // confirms employee type via polymorphism
-        assertEquals(PersonEmployeePayroll.EmployedType.SALARYEMPLOYEES, workers[2].getEmployedType()); // confirms salary employee type via polymorphism
+        assertEquals(PersonEmployeePayroll.EmployedType.CONTRACTORS, workers[0].getEmployedType()); // confirms contractor type 
+        assertEquals(PersonEmployeePayroll.EmployedType.EMPLOYEES, workers[1].getEmployedType());   // confirms employee type 
+        assertEquals(PersonEmployeePayroll.EmployedType.SALARYEMPLOYEES, workers[2].getEmployedType()); // confirms salary employee type 
     }
 }

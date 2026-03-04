@@ -5,7 +5,7 @@ public class Contractors extends PersonEmployeePayroll
 
     public Contractors() 
     {
-        super(); // calls the no-arg constructor
+        //super(); // calls the no-arg constructor
         setEmployedType(EmployedType.CONTRACTORS);
     }
 
