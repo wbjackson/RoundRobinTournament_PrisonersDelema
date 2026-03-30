@@ -1,4 +1,8 @@
-package SITS_sprint1;
+package SITS_sprint2;
+
+import SITS_sprint1.AGame;
+
+import SITS_sprint1.Robot;
 
 public class PrisonerDelimmaGame extends AGame
 {
@@ -10,7 +14,6 @@ public class PrisonerDelimmaGame extends AGame
 	@Override
 	public Robot playGame(Robot p1, Robot p2)
 	{
-
 		p1.resetScore();
 		p2.resetScore();
 
@@ -30,13 +33,14 @@ public class PrisonerDelimmaGame extends AGame
 				p1.rememberOpponentMove(move2);
 				p2.rememberOpponentMove(move1);
 			}
-		return null;
+
+		return (p1.getScore() >= p2.getScore()) ? p1 : p2;
 	}
 
 	private void applyPayoff(Robot p1, Robot p2, String move1, String move2)
 	{
-		boolean c1 = move1.equals("Cooperate");
-		boolean c2 = move2.equals("Cooperate");
+		boolean c1 = move1.equalsIgnoreCase("Cooperate");
+		boolean c2 = move2.equalsIgnoreCase("Cooperate");
 
 		if (c1 && c2)
 			{
@@ -53,6 +57,6 @@ public class PrisonerDelimmaGame extends AGame
 			{
 				p2.addScore(5);
 			}
-
 	}
+
 }
