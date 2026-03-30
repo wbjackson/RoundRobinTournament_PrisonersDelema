@@ -1,6 +1,7 @@
 package SITS_sprint1;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 public abstract class Tournament
@@ -15,5 +16,11 @@ public abstract class Tournament
 	}
 	
 	public abstract Robot runTournament();
+
+	public List<Robot> getParticipants()
+	{
+		// TODO Auto-generated method stub
+		return this.participants;
+	}
 
 }

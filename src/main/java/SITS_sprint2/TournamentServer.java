@@ -5,6 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import SITS_sprint1.AGame;
+import SITS_sprint1.Robot;
+import SITS_sprint1.RoundRobinTournament;
+import SITS_sprint1.Tournament;
+
 public class TournamentServer
 {
     private Map<Integer, Tournament> tournaments;
@@ -56,7 +61,7 @@ public class TournamentServer
             return "Client not found.";
         }
 
-        t.getParticipants().add(robot);
+        t.getParticipants().add(robot); //TODO
 
         return "Client added to tournament.";
     }

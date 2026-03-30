@@ -1,22 +1,22 @@
 package SITS_sprint1;
-
 import java.util.ArrayList;
 
 public class RoundRobinTournament extends Tournament
 {
-
 	public RoundRobinTournament(ArrayList<Robot> participants, AGame game)
 	{
 		super(participants, game);
 	}
-
+	
 	@Override
 	public Robot runTournament() {
-
+		
+		for (Robot r : participants) {
+		    r.record = 0;
+		}
 	    if (participants == null || participants.size() < 2) {
 	        throw new IllegalArgumentException("Not enough participants");
 	    }
-
 	    System.out.println(participants.size());
 
 	    for (int i = 0; i < participants.size(); i++) {

@@ -2,6 +2,13 @@ package SITS_sprint2;
 
 import java.util.ArrayList;
 
+import SITS_sprint1.OnlyDefectRobot;
+import SITS_sprint1.PrisonerDelimmaGame;
+import SITS_sprint1.PrisonerSameRobot;
+import SITS_sprint1.Robot;
+
+
+
 public class RunTournament
 {
 	public static void main(String[] args)
@@ -14,7 +21,7 @@ public class RunTournament
 		participants.add(new OnlyDefectRobot("Defector"));
 		participants.add(new PrisonerSameRobot("CopyCat"));
 
-		AGame game = new PrisonerDelimmaGame(3);
+		PrisonerDelimmaGame game = new PrisonerDelimmaGame(3);
 
 		int tournamentId = server.createTournament(participants, game);
 		System.out.println("Tournament created: " + tournamentId);

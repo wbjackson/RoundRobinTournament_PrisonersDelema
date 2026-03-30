@@ -2,6 +2,8 @@ package SITS_sprint2;
 
 import org.springframework.web.client.RestClient;
 
+import SITS_sprint1.Robot;
+
 public class RemoteClientRobot extends Robot
 {
     private String ip;
