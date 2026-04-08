@@ -27,6 +27,10 @@ public abstract class Robot
 		return score;
 	}
 	
+	public int getRecord() {
+		return this.record;
+	}
+	
 	public void addScore(int points) {
 		score += points;
 	}
@@ -37,6 +41,8 @@ public abstract class Robot
 	public void resetScore() {
 		score = 0;
 	}
+	
+	
 	public abstract String makeMove();
 	
 	public abstract void rememberOpponentMove(String move);

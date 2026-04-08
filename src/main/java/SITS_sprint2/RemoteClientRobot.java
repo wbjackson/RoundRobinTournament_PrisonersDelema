@@ -1,3 +1,4 @@
+
 package SITS_sprint2;
 
 import org.springframework.web.client.RestClient;
@@ -18,7 +19,6 @@ public class RemoteClientRobot extends Robot
         this.restClient = RestClient.create();
     }
 
-    
     String normalizeResponse(String response)
     {
         if (response == null)
@@ -26,14 +26,16 @@ public class RemoteClientRobot extends Robot
             return "Defect";
         }
 
-        if (response.equalsIgnoreCase("cooperate"))
+        response = response.trim();
+
+        if (response.equalsIgnoreCase("Cooperate"))
         {
             return "Cooperate";
         }
 
         return "Defect";
     }
-    
+
     @Override
     public String makeMove()
     {
@@ -46,7 +48,7 @@ public class RemoteClientRobot extends Robot
                     .retrieve()
                     .body(String.class);
 
-            System.out.println(name + " (REMOTE) -> " + response);
+            System.out.println(getName() + " (REMOTE) -> " + response);
             return normalizeResponse(response);
         }
         catch (Exception e)

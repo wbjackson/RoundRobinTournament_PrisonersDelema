@@ -12,7 +12,19 @@ import SITS_sprint1.Tournament;
 
 public class TournamentServer
 {
-    private Map<Integer, Tournament> tournaments;
+    private static class HostedTournament
+    {
+        Tournament tournament;
+        boolean registrationOpen;
+
+        HostedTournament(Tournament tournament)
+        {
+            this.tournament = tournament;
+            this.registrationOpen = true;
+        }
+    }
+
+    private Map<Integer, HostedTournament> tournaments;
     private Map<String, RemoteClientRobot> clients;
     private int nextTournamentId;
 
@@ -41,19 +53,24 @@ public class TournamentServer
         int id = nextTournamentId++;
 
         Tournament t = new RoundRobinTournament(new ArrayList<>(participants), game);
-        tournaments.put(id, t);
+        tournaments.put(id, new HostedTournament(t));
 
         return id;
     }
 
     public String addClientToTournament(String clientName, int tournamentId)
     {
-        Tournament t = tournaments.get(tournamentId);
+        HostedTournament hosted = tournaments.get(tournamentId);
         RemoteClientRobot robot = clients.get(clientName);
 
-        if (t == null)
+        if (hosted == null)
         {
             return "Tournament not found.";
+        }
+
+        if (!hosted.registrationOpen)
+        {
+            return "Registration is closed.";
         }
 
         if (robot == null)
@@ -61,25 +78,65 @@ public class TournamentServer
             return "Client not found.";
         }
 
-        t.getParticipants().add(robot); //TODO
+        hosted.tournament.getParticipants().add(robot);
 
         return "Client added to tournament.";
     }
 
+    public String closeRegistration(int tournamentId)
+    {
+        HostedTournament hosted = tournaments.get(tournamentId);
+
+        if (hosted == null)
+        {
+            return "Tournament not found.";
+        }
+
+        hosted.registrationOpen = false;
+        return "Registration closed.";
+    }
+
+    public boolean isRegistrationOpen(int tournamentId)
+    {
+        HostedTournament hosted = tournaments.get(tournamentId);
+
+        if (hosted == null)
+        {
+            return false;
+        }
+
+        return hosted.registrationOpen;
+    }
+
     public Robot startTournament(int tournamentId)
     {
-        Tournament t = tournaments.get(tournamentId);
+        HostedTournament hosted = tournaments.get(tournamentId);
 
-        if (t == null)
+        if (hosted == null)
         {
             throw new IllegalArgumentException("Tournament not found.");
         }
 
-        return t.runTournament();
+        if (hosted.registrationOpen)
+        {
+            throw new IllegalStateException("Registration is still open.");
+        }
+
+        return hosted.tournament.runTournament();
     }
 
     public String viewTournaments()
     {
-        return tournaments.keySet().toString();
+        ArrayList<Integer> openTournaments = new ArrayList<>();
+
+        for (Map.Entry<Integer, HostedTournament> entry : tournaments.entrySet())
+        {
+            if (entry.getValue().registrationOpen)
+            {
+                openTournaments.add(entry.getKey());
+            }
+        }
+
+        return openTournaments.toString();
     }
 }

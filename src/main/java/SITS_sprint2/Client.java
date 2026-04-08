@@ -1,20 +1,17 @@
 package SITS_sprint2;
 
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Random;
 
 @RestController
 @RequestMapping("/")
-public class Client {
+public class Client
+{
+    private final Random rand = new Random();
 
-    private Random rand = new Random();
-
-    // Endpoint the server will call
     @GetMapping("/move")
-    public String makeDecision() {
-
-
+    public String makeDecision()
+    {
         if (rand.nextBoolean()) {
             return "Cooperate";
         } else {

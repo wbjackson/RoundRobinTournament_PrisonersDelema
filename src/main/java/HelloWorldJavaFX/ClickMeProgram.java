@@ -5,7 +5,7 @@ import javafx.scene.*;
 import javafx.scene.layout.*;
 import javafx.scene.control.*;
 
-public class ClickMeProgram extends AppRunner
+public class ClickMeProgram extends Application
 {
 
 	public static void main(String[] args)
@@ -38,9 +38,12 @@ public class ClickMeProgram extends AppRunner
 	{
 		if (btn.getText() == "Click me please!")
 			{
-				btn.setText(); //picture on phone 3/30/26
+				btn.setText("You clicked me!"); //picture on phone 3/30/26
 			}
-		
+		else 
+			{
+				btn.setText("Click me please!");
+			}
 	}
 	public ClickMeProgram()
 	{
