@@ -1,0 +1,51 @@
+=====================================
+TOURNAMENT START: Round Robin Tournament
+=====================================
+
+MATCH: Defector vs CopyCat
+Round 1: Defector -> Defect, CopyCat -> Cooperate
+After round 1: Defector=5, CopyCat=0
+
+Round 2: Defector -> Defect, CopyCat -> Defect
+After round 2: Defector=6, CopyCat=1
+
+Round 3: Defector -> Defect, CopyCat -> Defect
+After round 3: Defector=7, CopyCat=2
+
+TOURNAMENT RECORD UPDATE: Defector=7, CopyCat=2
+
+MATCH: Defector vs HumanPlayer
+=====================================
+TOURNAMENT START: Round Robin Tournament
+=====================================
+
+MATCH: Defector vs CopyCat
+Round 1: Defector -> Defect, CopyCat -> Cooperate
+After round 1: Defector=5, CopyCat=0
+
+Round 2: Defector -> Defect, CopyCat -> Defect
+After round 2: Defector=6, CopyCat=1
+
+Round 3: Defector -> Defect, CopyCat -> Defect
+After round 3: Defector=7, CopyCat=2
+
+TOURNAMENT RECORD UPDATE: Defector=7, CopyCat=2
+
+MATCH: Defector vs HumanPlayer
+=====================================
+TOURNAMENT START: Round Robin Tournament
+=====================================
+
+MATCH: Defector vs CopyCat
+Round 1: Defector -> Defect, CopyCat -> Cooperate
+After round 1: Defector=5, CopyCat=0
+
+Round 2: Defector -> Defect, CopyCat -> Defect
+After round 2: Defector=6, CopyCat=1
+
+Round 3: Defector -> Defect, CopyCat -> Defect
+After round 3: Defector=7, CopyCat=2
+
+TOURNAMENT RECORD UPDATE: Defector=7, CopyCat=2
+
+MATCH: Defector vs HumanPlayer

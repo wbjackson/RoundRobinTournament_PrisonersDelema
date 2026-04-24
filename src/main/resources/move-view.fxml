@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="SITS_sprint3.MoveViewController">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Move View" style="-fx-font-size: 24px;" />
+
+    <Label fx:id="tournamentTitleLabel"
+           text="Tournament: None Selected"
+           style="-fx-font-size: 18px;" />
+
+    <Label text="Live Moves" style="-fx-font-size: 20px;" />
+
+    <ListView fx:id="moveList"
+              VBox.vgrow="ALWAYS" />
+
+    <Button fx:id="exitButton"
+            text="Exit Tournament"
+            onAction="#handleExit" />
+
+</VBox>

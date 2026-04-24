@@ -1,10 +1,5 @@
-target/
-.metadata/
-TournamentsResults.txt
-
-.classpath
-.project
-.settings/
-
-*.log
-*.tmp
+/target/
+/bin/
+/.metadata/
+/.settings/
+*.class

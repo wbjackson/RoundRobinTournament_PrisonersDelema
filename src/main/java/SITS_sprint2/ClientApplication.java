@@ -16,3 +16,9 @@ public class ClientApplication
 	    SpringApplication.run(ClientApplication.class, args);
 	}
 }
+
+
+//http://localhost:8081/server/create
+//http://localhost:8081/server/close/1
+//http://localhost:8081/server/start/1
+//http://localhost:8081/server/tournaments

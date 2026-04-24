@@ -1,3 +1,5 @@
+
+
 package SITS_sprint2;
 
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,12 @@ public class TournamentServerController
         return server.viewTournaments();
     }
 
+    @GetMapping("/moves/{tournamentId}")
+    public String getTournamentMoves(@PathVariable int tournamentId)
+    {
+        return server.getTournamentMoves(tournamentId);
+    }
+
     @PostMapping("/register/{name}/{ip}/{port}")
     public String registerClient(@PathVariable String name,
                                  @PathVariable String ip,
@@ -30,7 +38,7 @@ public class TournamentServerController
         return server.registerClient(name, ip, port);
     }
 
-    @PostMapping("/create")
+    @GetMapping("/create")
     public String createTournament()
     {
         ArrayList<Robot> participants = new ArrayList<>();
@@ -50,16 +58,32 @@ public class TournamentServerController
         return server.addClientToTournament(clientName, tournamentId);
     }
 
-    @PostMapping("/close/{tournamentId}")
+    @GetMapping("/close/{tournamentId}")
     public String closeRegistration(@PathVariable int tournamentId)
     {
         return server.closeRegistration(tournamentId);
     }
 
-    @PostMapping("/start/{tournamentId}")
+    @GetMapping("/start/{tournamentId}")
     public String startTournament(@PathVariable int tournamentId)
     {
         Robot winner = server.startTournament(tournamentId);
         return "Winner: " + winner.getName();
+    }
+
+    @GetMapping("/viewer/register/{tournamentId}/{ip}/{port}")
+    public String registerViewer(@PathVariable int tournamentId,
+                                 @PathVariable String ip,
+                                 @PathVariable String port)
+    {
+        return server.registerViewer(tournamentId, ip, port);
+    }
+
+    @GetMapping("/viewer/unregister/{tournamentId}/{ip}/{port}")
+    public String unregisterViewer(@PathVariable int tournamentId,
+                                   @PathVariable String ip,
+                                   @PathVariable String port)
+    {
+        return server.unregisterViewer(tournamentId, ip, port);
     }
 }

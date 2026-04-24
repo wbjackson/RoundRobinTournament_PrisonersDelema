@@ -2,7 +2,6 @@
 package SITS_sprint2;
 
 import org.springframework.web.client.RestClient;
-
 import SITS_sprint1.Robot;
 
 public class RemoteClientRobot extends Robot
@@ -61,5 +60,18 @@ public class RemoteClientRobot extends Robot
     @Override
     public void rememberOpponentMove(String move)
     {
+        try
+        {
+            String url = "http://" + ip + ":" + port + "/remember/" + move;
+
+            restClient.post()
+                    .uri(url)
+                    .retrieve()
+                    .body(String.class);
+        }
+        catch (Exception e)
+        {
+            System.out.println("Error sending opponent move to client: " + e.getMessage());
+        }
     }
 }
