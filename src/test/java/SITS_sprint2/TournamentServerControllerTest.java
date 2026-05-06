@@ -1,103 +1,3 @@
-//package SITS_sprint2;
-//
-//import static org.junit.jupiter.api.Assertions.*;
-//
-//import org.junit.jupiter.api.Test;
-//
-//class TournamentServerControllerTest
-//{
-//    @Test
-//    void testViewTournamentsInitiallyEmpty()
-//    {
-//        TournamentServerController controller = new TournamentServerController();
-//
-//        String result = controller.viewTournaments();
-//
-//        assertTrue(result.contains("["));
-//        assertTrue(result.contains("]"));
-//    }
-//
-//    @Test
-//    void testRegisterClientThroughController()
-//    {
-//        TournamentServerController controller = new TournamentServerController();
-//
-//        String result = controller.registerClient("Remote1", "localhost", "8081");
-//
-//        assertTrue(result.contains("Client registered successfully"));
-//    }
-//
-//    @Test
-//    void testCreateTournamentThroughController()
-//    {
-//        TournamentServerController controller = new TournamentServerController();
-//
-//        String result = controller.createTournament();
-//
-//        assertTrue(result.contains("Tournament created:"));
-//    }
-//
-////    @Test
-////    void testJoinCloseAndStartTournamentThroughController() throws InterruptedException
-////    {
-////        TournamentServerController controller = new TournamentServerController();
-////
-////        controller.registerClient("Remote1", "localhost", "8081");
-////
-////        String createResult = controller.createTournament();
-////        int tournamentId = Integer.parseInt(createResult.replace("Tournament created: ", "").trim());
-////
-////        String joinResult = controller.addClientToTournament("Remote1", tournamentId);
-////        String closeResult = controller.closeRegistration(tournamentId);
-////        String startResult = controller.startTournament(tournamentId);
-////        
-////        Thread.sleep(2000);
-////
-////        assertTrue(joinResult.contains("Client added"));
-////        assertTrue(closeResult.contains("Registration closed"));
-////        //assertTrue(startResult.contains("Tournament started."));
-////        assertTrue(startResult.contains("Winner:"));
-////    }
-//    
-//    @Test
-//    void testJoinCloseAndStartTournamentThroughController() throws InterruptedException
-//    {
-//        TournamentServerController controller = new TournamentServerController();
-//
-//        controller.registerClient("Remote1", "localhost", "8081");
-//
-//        String createResult = controller.createTournament();
-//        int tournamentId = Integer.parseInt(createResult.replace("Tournament created: ", "").trim());
-//
-//        String joinResult = controller.addClientToTournament("Remote1", tournamentId);
-//        String closeResult = controller.closeRegistration(tournamentId);
-//        String startResult = controller.startTournament(tournamentId);
-//
-//        Thread.sleep(2000);
-//
-//        assertTrue(joinResult.contains("Client added"));
-//        assertTrue(closeResult.contains("Registration closed"));
-//        assertTrue(startResult.contains("Tournament started"));
-//    }
-//    
-//    @Test
-//    void testGetTournamentMovesThroughController() throws InterruptedException
-//    {
-//        TournamentServerController controller = new TournamentServerController();
-//
-//        String createResult = controller.createTournament();
-//        int tournamentId = Integer.parseInt(createResult.replace("Tournament created: ", "").trim());
-//
-//        controller.closeRegistration(tournamentId);
-//        controller.startTournament(tournamentId);
-//        
-//        Thread.sleep(2000);
-//
-//        String moves = controller.getTournamentMoves(tournamentId);
-//
-//        assertTrue(moves.contains("TOURNAMENT START"));
-//    }
-//}
 package SITS_sprint2;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -196,7 +96,7 @@ class TournamentServerControllerTest
     {
         RobotClientController controller = new RobotClientController();
         Robot robot = new OnlyDefectRobot("Test");
-
+        
         controller.setHostedRobot(robot);
 
         assertEquals(robot, controller.getHostedRobot());
