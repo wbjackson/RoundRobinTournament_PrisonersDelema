@@ -23,9 +23,9 @@ public class Main {
         Robot winner = tournament.runTournament();
 
         //System.out.println();
-        System.out.println("\nTournament Winner: " + winner.name);
-        System.out.println("Score: " + winner.score);
-        System.out.println("Record: " + winner.record);
+        System.out.println("\nTournament Winner: " + winner.getName());
+        System.out.println("Score: " + winner.getScore());
+        System.out.println("Record: " + winner.getRecord());
     }
     
     

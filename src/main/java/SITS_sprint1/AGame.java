@@ -51,5 +51,14 @@ public abstract class AGame
 	
 	//Abstract
 	public abstract Robot playGame(Robot p1, Robot p2);
+	
+	public ArrayList<MoveObserver> getMoveObservers() {
+	    return moveObservers;
+	}
+
+	public ArrayList<ScoreObserver> getScoreObservers() {
+	    return scoreObservers;
+	}
 }
+
 

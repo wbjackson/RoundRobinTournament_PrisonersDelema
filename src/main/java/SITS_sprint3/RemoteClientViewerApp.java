@@ -10,9 +10,6 @@ import javafx.stage.Stage;
 
 public class RemoteClientViewerApp extends Application
 {
-    private static final String TOURNAMENTS_FXML = "/tournaments-view.fxml";
-    private static final String MOVE_FXML = "/move-view.fxml";
-
     private Stage primaryStage;
     private Scene tournamentsScene;
     private Scene moveScene;
@@ -27,10 +24,8 @@ public class RemoteClientViewerApp extends Application
         this.primaryStage = stage;
         this.model = new TournamentModel();
 
-        
         loadScenes();
 
-        
         primaryStage.setTitle("Remote Client Viewer");
         primaryStage.setScene(tournamentsScene);
         primaryStage.show();
@@ -38,16 +33,15 @@ public class RemoteClientViewerApp extends Application
 
     private void loadScenes() throws IOException
     {
-    	System.out.println(getClass().getResource("/SITS_sprint3/move-view.fxml"));
         FXMLLoader tournamentsLoader =
-                new FXMLLoader(getClass().getResource(TOURNAMENTS_FXML));
+                new FXMLLoader(getClass().getResource(SceneManager.TOURNAMENTS_FXML));
         Parent tournamentsRoot = tournamentsLoader.load();
         tournamentsViewController = tournamentsLoader.getController();
         tournamentsViewController.setModel(model);
         tournamentsViewController.setApp(this);
 
         FXMLLoader moveLoader =
-                new FXMLLoader(getClass().getResource(MOVE_FXML));
+                new FXMLLoader(getClass().getResource(SceneManager.MOVE_FXML));
         Parent moveRoot = moveLoader.load();
         moveViewController = moveLoader.getController();
         moveViewController.setModel(model);
@@ -55,7 +49,6 @@ public class RemoteClientViewerApp extends Application
 
         tournamentsScene = new Scene(tournamentsRoot);
         moveScene = new Scene(moveRoot);
-        System.out.println(getClass().getResource("/SITS_sprint3/move-view.fxml"));
     }
 
     public void switchToMoveView()
@@ -72,10 +65,9 @@ public class RemoteClientViewerApp extends Application
 
     @Override
     public void stop()
-    { 
+    {
         if (model != null)
         {
-            model.unregisterFromUpdates();
             model.stopViewerClient();
         }
     }

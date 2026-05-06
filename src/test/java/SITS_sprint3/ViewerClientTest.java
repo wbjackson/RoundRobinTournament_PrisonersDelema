@@ -3,10 +3,13 @@ package SITS_sprint3;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.net.HttpURLConnection;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -29,7 +32,7 @@ public class ViewerClientTest
         }
     }
 
-    private static void waitForFxEvents() throws Exception
+    private static void waitForFx() throws Exception
     {
         CountDownLatch latch = new CountDownLatch(1);
         Platform.runLater(latch::countDown);
@@ -37,26 +40,28 @@ public class ViewerClientTest
     }
 
     @Test
-    void testReceiveMoveAddsMoveToModel() throws Exception
+    void testReceiveMoveAddsToModel() throws Exception
     {
         TournamentModel model = new TournamentModel();
         ViewerClient client = new ViewerClient();
         client.setModel(model);
 
-        client.receiveMove("Live Move A");
-        waitForFxEvents();
+        client.receiveMove("Live Move");
 
-        assertTrue(model.getObservableMoves().contains("Live Move A"));
+        waitForFx();
+
+        assertEquals(1, model.getObservableMoves().size());
+        assertEquals("Live Move", model.getObservableMoves().get(0));
     }
 
     @Test
-    void testFetchTournamentListParsesRegistrationAndActive() throws Exception
+    void testFetchTournamentListParsesCorrectly() throws Exception
     {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
 
         server.createContext("/server/tournaments", exchange ->
         {
-            String response = "[1:REG, 2:ACTIVE]";
+            String response = "[1:REG, 2:ACTIVE, 3:FINISHED]";
             exchange.sendResponseHeaders(200, response.getBytes().length);
 
             try (OutputStream os = exchange.getResponseBody())
@@ -72,18 +77,14 @@ public class ViewerClientTest
         {
             ViewerClient client = new ViewerClient();
 
-            List<TournamentInfo> tournaments =
+            List<TournamentInfo> list =
                     client.fetchTournamentList("localhost", String.valueOf(port));
 
-            assertEquals(2, tournaments.size());
+            assertEquals(3, list.size());
 
-            assertEquals(1, tournaments.get(0).getId());
-            assertTrue(tournaments.get(0).isRegistrationOpen());
-            assertFalse(tournaments.get(0).isActive());
-
-            assertEquals(2, tournaments.get(1).getId());
-            assertFalse(tournaments.get(1).isRegistrationOpen());
-            assertTrue(tournaments.get(1).isActive());
+            assertTrue(list.get(0).isRegistrationOpen());
+            assertTrue(list.get(1).isActive());
+            assertFalse(list.get(2).isActive());
         }
         finally
         {
@@ -92,18 +93,87 @@ public class ViewerClientTest
     }
 
     @Test
-    void testFetchTournamentListReturnsFallbackWhenServerUnavailable()
+    void testFetchTournamentListHandlesEmptyResponse() throws Exception
     {
-        ViewerClient client = new ViewerClient();
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
 
-        List<TournamentInfo> tournaments =
-                client.fetchTournamentList("localhost", "9999");
+        server.createContext("/server/tournaments", exchange ->
+        {
+            String response = "[]";
+            exchange.sendResponseHeaders(200, response.getBytes().length);
 
-        assertNotNull(tournaments);
+            try (OutputStream os = exchange.getResponseBody())
+            {
+                os.write(response.getBytes());
+            }
+        });
+
+        server.start();
+        int port = server.getAddress().getPort();
+
+        try
+        {
+            ViewerClient client = new ViewerClient();
+
+            List<TournamentInfo> list =
+                    client.fetchTournamentList("localhost", String.valueOf(port));
+
+            assertEquals(0, list.size());
+        }
+        finally
+        {
+            server.stop(0);
+        }
     }
 
     @Test
-    void testFetchTournamentMovesParsesMoveHistory() throws Exception
+    void testFetchTournamentListMalformedDataIgnored() throws Exception
+    {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+
+        server.createContext("/server/tournaments", exchange ->
+        {
+            String response = "[bad data, 2:ACTIVE]";
+            exchange.sendResponseHeaders(200, response.getBytes().length);
+
+            try (OutputStream os = exchange.getResponseBody())
+            {
+                os.write(response.getBytes());
+            }
+        });
+
+        server.start();
+        int port = server.getAddress().getPort();
+
+        try
+        {
+            ViewerClient client = new ViewerClient();
+
+            List<TournamentInfo> list =
+                    client.fetchTournamentList("localhost", String.valueOf(port));
+
+            assertEquals(1, list.size());
+        }
+        finally
+        {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void testFetchTournamentListServerUnavailable()
+    {
+        ViewerClient client = new ViewerClient();
+
+        List<TournamentInfo> list =
+                client.fetchTournamentList("localhost", "9999");
+
+        assertNotNull(list);
+        assertEquals(0, list.size());
+    }
+
+    @Test
+    void testFetchMovesParsesCorrectly() throws Exception
     {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
 
@@ -139,7 +209,41 @@ public class ViewerClientTest
     }
 
     @Test
-    void testFetchTournamentMovesReturnsEmptyWhenServerUnavailable()
+    void testFetchMovesHandlesEmptyResponse() throws Exception
+    {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+
+        server.createContext("/server/moves/1", exchange ->
+        {
+            String response = "[]";
+            exchange.sendResponseHeaders(200, response.getBytes().length);
+
+            try (OutputStream os = exchange.getResponseBody())
+            {
+                os.write(response.getBytes());
+            }
+        });
+
+        server.start();
+        int port = server.getAddress().getPort();
+
+        try
+        {
+            ViewerClient client = new ViewerClient();
+
+            List<String> moves =
+                    client.fetchTournamentMoves("localhost", String.valueOf(port), 1);
+
+            assertEquals(0, moves.size());
+        }
+        finally
+        {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void testFetchMovesServerUnavailable()
     {
         ViewerClient client = new ViewerClient();
 
@@ -151,173 +255,134 @@ public class ViewerClientTest
     }
 
     @Test
-    void testRegisterViewerWithServerCallsExpectedEndpoint() throws Exception
-    {
-        final String[] path = {null};
-
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
-
-        server.createContext("/server/viewer/register/1/localhost/8095", exchange ->
-        {
-            path[0] = exchange.getRequestURI().getPath();
-            String response = "Viewer registered.";
-            exchange.sendResponseHeaders(200, response.getBytes().length);
-
-            try (OutputStream os = exchange.getResponseBody())
-            {
-                os.write(response.getBytes());
-            }
-        });
-
-        server.start();
-        int port = server.getAddress().getPort();
-
-        try
-        {
-            ViewerClient client = new ViewerClient();
-            client.registerViewerWithServer("localhost", String.valueOf(port), 1);
-
-            assertEquals("/server/viewer/register/1/localhost/8095", path[0]);
-        }
-        finally
-        {
-            server.stop(0);
-        }
-    }
-
-    @Test
-    void testUnregisterViewerWithServerCallsExpectedEndpoint() throws Exception
-    {
-        final String[] path = {null};
-
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
-
-        server.createContext("/server/viewer/unregister/1/localhost/8095", exchange ->
-        {
-            path[0] = exchange.getRequestURI().getPath();
-            String response = "Viewer unregistered.";
-            exchange.sendResponseHeaders(200, response.getBytes().length);
-
-            try (OutputStream os = exchange.getResponseBody())
-            {
-                os.write(response.getBytes());
-            }
-        });
-
-        server.start();
-        int port = server.getAddress().getPort();
-
-        try
-        {
-            ViewerClient client = new ViewerClient();
-            client.unregisterViewerFromServer("localhost", String.valueOf(port), 1);
-
-            assertEquals("/server/viewer/unregister/1/localhost/8095", path[0]);
-        }
-        finally
-        {
-            server.stop(0);
-        }
-    }
-    
-    @Test
-    void testGetLocalIPAndPort()
+    void testStartAndStopServerDoesNotThrow()
     {
         ViewerClient client = new ViewerClient();
 
-        assertEquals("localhost", client.getLocalIP());
-        assertEquals(8095, client.getLocalPort());
+        assertDoesNotThrow(client::startServer);
+        assertDoesNotThrow(client::stopServer);
     }
 
     @Test
-    void testSetLocalPort()
+    void testStopWithoutStartDoesNotThrow()
     {
         ViewerClient client = new ViewerClient();
 
-        client.setLocalPort(9000);
-
-        assertEquals(9000, client.getLocalPort());
+        assertDoesNotThrow(client::stopServer);
     }
     
     @Test
-    void testReceiveMoveAddsToModel() throws Exception
+    void testStartServerTwiceDoesNotThrow()
+    {
+        ViewerClient client = new ViewerClient();
+
+        try
+        {
+            client.startServer();
+
+            assertNotNull(client.getServer());
+            assertDoesNotThrow(client::startServer);
+        }
+        finally
+        {
+            client.stopServer();
+        }
+    }
+
+    @Test
+    void testReceiveMoveEndpointRejectsGet() throws Exception
+    {
+        ViewerClient client = new ViewerClient();
+
+        try
+        {
+            client.startServer();
+
+            URL url = new URL("http://localhost:" + client.getLocalPort() + "/receiveMove");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            assertEquals(405, connection.getResponseCode());
+
+            connection.disconnect();
+        }
+        finally
+        {
+            client.stopServer();
+        }
+    }
+
+    @Test
+    void testReceiveMoveEndpointAcceptsPost() throws Exception
     {
         TournamentModel model = new TournamentModel();
         ViewerClient client = new ViewerClient();
         client.setModel(model);
 
-        client.receiveMove("Test Move");
+        try
+        {
+            client.startServer();
 
-        Thread.sleep(100); // allow Platform.runLater
+            URL url = new URL("http://localhost:" + client.getLocalPort() + "/receiveMove");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        assertTrue(model.getObservableMoves().contains("Test Move"));
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+
+            try (OutputStream os = connection.getOutputStream())
+            {
+                os.write("Endpoint Move".getBytes());
+            }
+
+            assertEquals(200, connection.getResponseCode());
+
+            waitForFx();
+
+            assertTrue(model.getObservableMoves().contains("Endpoint Move"));
+
+            connection.disconnect();
+        }
+        finally
+        {
+            client.stopServer();
+        }
     }
     
     @Test
-    void testStartAndStopServer()
+    void testFetchTournamentListWithInvalidInput()
     {
         ViewerClient client = new ViewerClient();
 
-        assertDoesNotThrow(client::startServer);
-        assertDoesNotThrow(client::stopServer);
+        assertTrue(client.fetchTournamentList(null, "8081").isEmpty());
+        assertTrue(client.fetchTournamentList("", "8081").isEmpty());
+        assertTrue(client.fetchTournamentList("localhost", null).isEmpty());
+        assertTrue(client.fetchTournamentList("localhost", "").isEmpty());
     }
     
     @Test
-    void testStartServerTwiceDoesNotCrash()
+    void testFetchTournamentMovesWithInvalidInput()
     {
         ViewerClient client = new ViewerClient();
 
-        assertDoesNotThrow(client::startServer);
-        assertDoesNotThrow(client::startServer);
-        assertDoesNotThrow(client::stopServer);
+        assertTrue(client.fetchTournamentMoves(null, "8081", 1).isEmpty());
+        assertTrue(client.fetchTournamentMoves("", "8081", 1).isEmpty());
+        assertTrue(client.fetchTournamentMoves("localhost", null, 1).isEmpty());
+        assertTrue(client.fetchTournamentMoves("localhost", "", 1).isEmpty());
     }
     
     @Test
-    void testRegisterViewerHandlesUnavailableServer()
+    void testParseTournamentStatusListNull()
     {
         ViewerClient client = new ViewerClient();
 
-        assertDoesNotThrow(() ->
-            client.registerViewerWithServer("localhost", "9999", 1)
-        );
+        assertTrue(client.fetchTournamentList("invalid", "invalid").isEmpty());
     }
     
     @Test
-    void testUnregisterViewerHandlesUnavailableServer()
+    void testParseMoveHistoryNull()
     {
         ViewerClient client = new ViewerClient();
 
-        assertDoesNotThrow(() ->
-            client.unregisterViewerFromServer("localhost", "9999", 1)
-        );
-    }
-    
-    @Test
-    void testParseMoveHistoryEmpty()
-    {
-        ViewerClient client = new ViewerClient();
-
-        List<String> moves = client.fetchTournamentMoves("localhost", "9999", 1);
-
-        assertNotNull(moves);
-    }
-    
-    @Test
-    void testParseTournamentListMalformed()
-    {
-        ViewerClient client = new ViewerClient();
-
-        List<TournamentInfo> result =
-            client.fetchTournamentList("localhost", "9999");
-
-        assertNotNull(result);
-    }
-    
-    @Test
-    void testStopServerWithoutStart()
-    {
-        ViewerClient client = new ViewerClient();
-
-        assertDoesNotThrow(client::stopServer);
+        assertTrue(client.fetchTournamentMoves("invalid", "invalid", 1).isEmpty());
     }
 }

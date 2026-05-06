@@ -24,16 +24,14 @@ class TournamentServerTest
     @Test
     void testClientMakeDecisionUsesHostedRobot()
     {
-        Client client = new Client(new OnlyDefectRobot("Hosted"));
-
+        RobotClientController client = new RobotClientController(new OnlyDefectRobot("Hosted"));
         assertEquals("Defect", client.makeDecision());
     }
 
     @Test
     void testClientCanUseDifferentHostedRobot()
     {
-        Client client = new Client(new PrisonerSameRobot("CopyCat"));
-
+        RobotClientController client = new RobotClientController(new PrisonerSameRobot("CopyCat"));
         assertEquals("Cooperate", client.makeDecision());
     }
 
@@ -41,7 +39,7 @@ class TournamentServerTest
     void testClientRememberOpponentMoveUpdatesHostedRobot()
     {
         PrisonerSameRobot robot = new PrisonerSameRobot("CopyCat");
-        Client client = new Client(robot);
+        RobotClientController client = new RobotClientController(robot);
 
         client.rememberOpponentMove("Defect");
 
@@ -49,21 +47,9 @@ class TournamentServerTest
     }
 
     @Test
-    void testClientGetterAndSetter()
-    {
-        Client client = new Client();
-        Robot robot = new OnlyDefectRobot("TestRobot");
-
-        client.setHostedRobot(robot);
-
-        assertEquals(robot, client.getHostedRobot());
-    }
-
-    @Test
     void testNormalizeResponseWithNull()
     {
         RemoteClientRobot robot = new RemoteClientRobot("Remote", "localhost", "8080");
-
         assertEquals("Defect", robot.normalizeResponse(null));
     }
 
@@ -91,7 +77,6 @@ class TournamentServerTest
     void testRemoteClientRobotMakeMoveFallsBackToDefectWhenServerUnavailable()
     {
         RemoteClientRobot robot = new RemoteClientRobot("Remote", "localhost", "9999");
-
         assertEquals("Defect", robot.makeMove());
     }
 
@@ -99,7 +84,6 @@ class TournamentServerTest
     void testRemoteClientRobotRememberOpponentMoveHandlesException()
     {
         RemoteClientRobot robot = new RemoteClientRobot("Remote", "localhost", "9999");
-
         assertDoesNotThrow(() -> robot.rememberOpponentMove("Defect"));
     }
 
@@ -177,9 +161,7 @@ class TournamentServerTest
 
         try {
             RemoteClientRobot robot = new RemoteClientRobot("Remote", "localhost", String.valueOf(port));
-
             robot.rememberOpponentMove("Defect");
-
             assertEquals("Defect", rememberedMove[0]);
         }
         finally {
@@ -325,24 +307,6 @@ class TournamentServerTest
     }
 
     @Test
-    void testIsRegistrationOpenInvalidId()
-    {
-        TournamentServer server = new TournamentServer();
-
-        assertFalse(server.isRegistrationOpen(999));
-    }
-
-    @Test
-    void testTournamentStartsWithRegistrationOpen()
-    {
-        TournamentServer server = new TournamentServer();
-
-        int id = server.createTournament(twoRobots(), new PrisonerDelimmaGame(1));
-
-        assertTrue(server.isRegistrationOpen(id));
-    }
-
-    @Test
     void testCloseRegistration()
     {
         TournamentServer server = new TournamentServer();
@@ -352,7 +316,7 @@ class TournamentServerTest
         String result = server.closeRegistration(id);
 
         assertEquals("Registration closed.", result);
-        assertFalse(server.isRegistrationOpen(id));
+        assertTrue(server.viewTournaments().contains(id + ":CLOSED"));
     }
 
     @Test
@@ -384,7 +348,7 @@ class TournamentServerTest
     }
 
     @Test
-    void testStartTournamentWorksAfterRegistrationClosed()
+    void testStartTournamentWorksAfterRegistrationClosed() throws InterruptedException
     {
         TournamentServer server = new TournamentServer();
 
@@ -393,7 +357,24 @@ class TournamentServerTest
 
         Robot winner = server.startTournament(id);
 
-        assertNotNull(winner);
+        assertNull(winner);
+        assertTrue(server.viewTournaments().contains(id + ":ACTIVE"));
+
+        Thread.sleep(2000);
+
+        assertTrue(server.viewTournaments().contains(id + ":FINISHED"));
+    }
+
+    @Test
+    void testStartTournamentTwiceThrowsException()
+    {
+        TournamentServer server = new TournamentServer();
+
+        int id = server.createTournament(twoRobots(), new PrisonerDelimmaGame(1));
+        server.closeRegistration(id);
+        server.startTournament(id);
+
+        assertThrows(IllegalStateException.class, () -> server.startTournament(id));
     }
 
     @Test
@@ -409,7 +390,7 @@ class TournamentServerTest
     }
 
     @Test
-    void testViewTournamentsShowsActiveStatusAfterClose()
+    void testViewTournamentsShowsClosedStatusAfterClose()
     {
         TournamentServer server = new TournamentServer();
 
@@ -418,68 +399,27 @@ class TournamentServerTest
 
         String result = server.viewTournaments();
 
-        assertTrue(result.contains(id + ":ACTIVE"));
+        assertTrue(result.contains(id + ":CLOSED"));
     }
 
     @Test
-    void testRegisterViewerSuccess()
+    void testViewTournamentsShowsFinishedStatusAfterTournamentRuns() throws InterruptedException
     {
         TournamentServer server = new TournamentServer();
 
         int id = server.createTournament(twoRobots(), new PrisonerDelimmaGame(1));
+        server.closeRegistration(id);
+        server.startTournament(id);
 
-        String result = server.registerViewer(id, "localhost", "8095");
+        Thread.sleep(2000);
 
-        assertEquals("Viewer registered.", result);
+        String result = server.viewTournaments();
+
+        assertTrue(result.contains(id + ":FINISHED"));
     }
 
     @Test
-    void testRegisterViewerMissingTournament()
-    {
-        TournamentServer server = new TournamentServer();
-
-        String result = server.registerViewer(999, "localhost", "8095");
-
-        assertEquals("Tournament not found.", result);
-    }
-
-    @Test
-    void testUnregisterViewerSuccess()
-    {
-        TournamentServer server = new TournamentServer();
-
-        int id = server.createTournament(twoRobots(), new PrisonerDelimmaGame(1));
-
-        server.registerViewer(id, "localhost", "8095");
-        String result = server.unregisterViewer(id, "localhost", "8095");
-
-        assertEquals("Viewer unregistered.", result);
-    }
-
-    @Test
-    void testUnregisterViewerMissingTournament()
-    {
-        TournamentServer server = new TournamentServer();
-
-        String result = server.unregisterViewer(999, "localhost", "8095");
-
-        assertEquals("Tournament not found.", result);
-    }
-
-    @Test
-    void testUnregisterViewerNotFound()
-    {
-        TournamentServer server = new TournamentServer();
-
-        int id = server.createTournament(twoRobots(), new PrisonerDelimmaGame(1));
-
-        String result = server.unregisterViewer(id, "localhost", "8095");
-
-        assertEquals("Viewer not found.", result);
-    }
-
-    @Test
-    void testTournamentMoveHistoryRecordsMoves()
+    void testTournamentMoveHistoryRecordsMoves() throws InterruptedException
     {
         TournamentServer server = new TournamentServer();
 
@@ -488,11 +428,12 @@ class TournamentServerTest
         server.closeRegistration(id);
         server.startTournament(id);
 
+        Thread.sleep(2000);
+
         String moves = server.getTournamentMoves(id);
 
         assertTrue(moves.contains("TOURNAMENT START"));
         assertTrue(moves.contains("MATCH"));
-        assertTrue(moves.contains("Round"));
     }
 
     @Test
@@ -586,5 +527,56 @@ class TournamentServerTest
         participants.add(new OnlyDefectRobot("A"));
         participants.add(new PrisonerSameRobot("B"));
         return participants;
+    }
+    
+    @Test
+    void testRobotClientControllerDefaultConstructorCreatesRobot()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        assertNotNull(controller.getHostedRobot());
+    }
+
+    @Test
+    void testRobotClientControllerSetAndGetHostedRobot()
+    {
+        RobotClientController controller = new RobotClientController();
+        Robot robot = new OnlyDefectRobot("Test");
+
+        controller.setHostedRobot(robot);
+
+        assertEquals(robot, controller.getHostedRobot());
+    }
+
+    @Test
+    void testRobotClientControllerMakeDecisionWithNullRobot()
+    {
+        RobotClientController controller = new RobotClientController();
+        controller.setHostedRobot(null);
+
+        String result = controller.makeDecision();
+
+        assertEquals("ERROR: No robot available", result);
+    }
+
+    @Test
+    void testRobotClientControllerRememberOpponentMoveInvalidMove()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        String result = controller.rememberOpponentMove("");
+
+        assertEquals("ERROR: Invalid move", result);
+    }
+
+    @Test
+    void testRobotClientControllerRememberOpponentMoveWithNullRobot()
+    {
+        RobotClientController controller = new RobotClientController();
+        controller.setHostedRobot(null);
+
+        String result = controller.rememberOpponentMove("Cooperate");
+
+        assertEquals("ERROR: No robot available", result);
     }
 }

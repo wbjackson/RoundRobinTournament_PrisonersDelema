@@ -1,4 +1,3 @@
-
 package SITS_sprint2;
 
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import SITS_sprint1.MoveObserver;
 import SITS_sprint1.Robot;
 import SITS_sprint1.RoundRobinTournament;
 import SITS_sprint1.Tournament;
-import SITS_sprint3.RemoteClientViewer;
 
 public class TournamentServer
 {
@@ -22,7 +20,6 @@ public class TournamentServer
         boolean started;
         boolean finished;
 
-        List<RemoteClientViewer> viewers;
         List<String> moveHistory;
         MoveObserver historyObserver;
 
@@ -32,7 +29,6 @@ public class TournamentServer
             this.registrationOpen = true;
             this.started = false;
             this.finished = false;
-            this.viewers = new ArrayList<>();
             this.moveHistory = new ArrayList<>();
 
             this.historyObserver = new MoveObserver()
@@ -44,7 +40,7 @@ public class TournamentServer
                 }
             };
 
-            this.tournament.game.registerMoveObserver(this.historyObserver);
+            this.tournament.getGame().registerMoveObserver(this.historyObserver);
         }
     }
 
@@ -76,8 +72,8 @@ public class TournamentServer
     {
         int id = nextTournamentId++;
 
-        Tournament t = new RoundRobinTournament(new ArrayList<>(participants), game);
-        tournaments.put(id, new HostedTournament(t));
+        Tournament tournament = new RoundRobinTournament(new ArrayList<>(participants), game);
+        tournaments.put(id, new HostedTournament(tournament));
 
         return id;
     }
@@ -103,7 +99,6 @@ public class TournamentServer
         }
 
         hosted.tournament.getParticipants().add(robot);
-
         return "Client added to tournament.";
     }
 
@@ -120,18 +115,6 @@ public class TournamentServer
         return "Registration closed.";
     }
 
-    public boolean isRegistrationOpen(int tournamentId)
-    {
-        HostedTournament hosted = tournaments.get(tournamentId);
-
-        if (hosted == null)
-        {
-            return false;
-        }
-
-        return hosted.registrationOpen;
-    }
-
     public Robot startTournament(int tournamentId)
     {
         HostedTournament hosted = tournaments.get(tournamentId);
@@ -146,58 +129,30 @@ public class TournamentServer
             throw new IllegalStateException("Registration is still open.");
         }
 
+        if (hosted.started)
+        {
+            throw new IllegalStateException("Tournament already started.");
+        }
+
         hosted.started = true;
-        Robot winner = hosted.tournament.runTournament();
-        hosted.finished = true;
 
-        return winner;
-    }
-
-    public String registerViewer(int tournamentId, String ip, String port)
-    {
-        HostedTournament hosted = tournaments.get(tournamentId);
-
-        if (hosted == null)
+        new Thread(() ->
         {
-            return "Tournament not found.";
-        }
-
-        RemoteClientViewer viewer = new RemoteClientViewer(ip, port);
-        hosted.viewers.add(viewer);
-
-        hosted.tournament.game.registerMoveObserver(viewer);
-
-        return "Viewer registered.";
-    }
-
-    public String unregisterViewer(int tournamentId, String ip, String port)
-    {
-        HostedTournament hosted = tournaments.get(tournamentId);
-
-        if (hosted == null)
-        {
-            return "Tournament not found.";
-        }
-
-        RemoteClientViewer toRemove = null;
-
-        for (RemoteClientViewer viewer : hosted.viewers)
-        {
-            if (viewer.getViewerIP().equals(ip) && viewer.getViewerPort().equals(port))
+            try
             {
-                toRemove = viewer;
-                break;
+                Thread.sleep(1500);
+                hosted.tournament.runTournament();
             }
-        }
+            catch (InterruptedException e)
+            {
+            }
+            finally
+            {
+                hosted.finished = true;
+            }
+        }).start();
 
-        if (toRemove != null)
-        {
-            hosted.tournament.game.unregisterMoveObserver(toRemove);
-            hosted.viewers.remove(toRemove);
-            return "Viewer unregistered.";
-        }
-
-        return "Viewer not found.";
+        return null;
     }
 
     public String getTournamentMoves(int tournamentId)
@@ -225,17 +180,17 @@ public class TournamentServer
             {
                 tournamentInfo.add(id + ":REG");
             }
+            else if (!hosted.started && !hosted.finished)
+            {
+                tournamentInfo.add(id + ":CLOSED");
+            }
+            else if (hosted.started && !hosted.finished)
+            {
+                tournamentInfo.add(id + ":ACTIVE");
+            }
             else if (hosted.finished)
             {
-                tournamentInfo.add(id + ":ACTIVE");
-            }
-            else if (hosted.started)
-            {
-                tournamentInfo.add(id + ":ACTIVE");
-            }
-            else
-            {
-                tournamentInfo.add(id + ":ACTIVE");
+                tournamentInfo.add(id + ":FINISHED");
             }
         }
 

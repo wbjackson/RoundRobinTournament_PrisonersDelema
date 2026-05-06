@@ -1,26 +1,56 @@
+//package SITS_sprint1;
+//
+//import java.util.ArrayList;
+//import java.util.List;
+//
+//
+//public abstract class Tournament
+//{
+//	public ArrayList<Robot> participants;
+//	public AGame game;
+//	
+//	public Tournament(ArrayList<Robot> participants, AGame game)
+//	{
+//		this.participants = participants;
+//		this.game = game;
+//	}
+//	
+//	public abstract Robot runTournament();
+//
+//	public List<Robot> getParticipants()
+//	{
+//		// TODO Auto-generated method stub
+//		return this.participants;
+//	}
+//
+//}
+
+
 package SITS_sprint1;
 
 import java.util.ArrayList;
 import java.util.List;
 
-
 public abstract class Tournament
 {
-	public ArrayList<Robot> participants;
-	public AGame game;
-	
-	public Tournament(ArrayList<Robot> participants, AGame game)
-	{
-		this.participants = participants;
-		this.game = game;
-	}
-	
-	public abstract Robot runTournament();
+    protected ArrayList<Robot> participants;
+    protected AGame game;
 
-	public List<Robot> getParticipants()
-	{
-		// TODO Auto-generated method stub
-		return this.participants;
-	}
+    public Tournament(ArrayList<Robot> participants, AGame game)
+    {
+        this.participants = participants;
+        this.game = game;
+    }
 
+    public abstract Robot runTournament();
+
+    public List<Robot> getParticipants()
+    {
+        return this.participants;
+    }
+
+    public AGame getGame()
+    {
+        return this.game;
+    }
 }

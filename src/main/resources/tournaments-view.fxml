@@ -14,19 +14,19 @@
         <Insets bottom="20" left="20" right="20" top="20" />
     </padding>
 
-    <Label style="-fx-font-size: 24px;" text="Connect to Server" />
+    <Label style="-fx-font-size: 24px;" text="Connect to a Server" />
 
     <HBox spacing="10">
         <TextField fx:id="ipField" promptText="IP Address" />
         <TextField fx:id="portField" promptText="Port" />
-        <Button fx:id="connectButton" onAction="#handleConnect" text="Connect" />
+        <Button fx:id="connectButton" onAction="#handleConnect" prefHeight="51.0" prefWidth="60.0" text="Connect" />
     </HBox>
 
-    <Label style="-fx-font-size: 20px;" text="Available Tournaments" />
+    <Label style="-fx-font-size: 20px;" text="Available Tournaments:" />
 
     <!-- 🔥 THIS IS THE IMPORTANT PART -->
     <ListView fx:id="tournamentList" VBox.vgrow="ALWAYS" />
 
-    <Button fx:id="refreshbutton" onAction="#handleRefresh" text="Refresh" />
+    <Button fx:id="refreshButton" onAction="#handleRefresh" prefHeight="25.0" prefWidth="85.0" text="Refresh" />
 
 </VBox>

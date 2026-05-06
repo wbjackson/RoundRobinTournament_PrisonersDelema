@@ -139,30 +139,4 @@ public class TournamentModel
     {
         viewerClient.stopServer();
     }
-
-    public void registerForUpdates()
-    {
-        if (selectedTournament == null)
-        {
-            throw new IllegalStateException("No tournament selected.");
-        }
-
-        viewerClient.registerViewerWithServer(
-                serverIP,
-                serverPort,
-                selectedTournament.getId()
-        );
-    }
-
-    public void unregisterFromUpdates()
-    {
-        if (selectedTournament != null && isConnected())
-        {
-            viewerClient.unregisterViewerFromServer(
-                    serverIP,
-                    serverPort,
-                    selectedTournament.getId()
-            );
-        }
-    }
 }

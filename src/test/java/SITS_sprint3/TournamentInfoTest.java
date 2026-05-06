@@ -7,12 +7,12 @@ import org.junit.jupiter.api.Test;
 public class TournamentInfoTest
 {
     @Test
-    void testTournamentInfoStoresValues()
+    void testConstructorAndGetters()
     {
-        TournamentInfo info = new TournamentInfo(1, "Test", true, false);
+        TournamentInfo info = new TournamentInfo(5, "Alpha", true, false);
 
-        assertEquals(1, info.getId());
-        assertEquals("Test", info.getName());
+        assertEquals(5, info.getId());
+        assertEquals("Alpha", info.getName());
         assertTrue(info.isActive());
         assertFalse(info.isRegistrationOpen());
     }
@@ -42,14 +42,39 @@ public class TournamentInfoTest
     }
 
     @Test
-    void testToStringContainsUsefulInfo()
+    void testStatusPriorityRegistrationOverActive()
     {
-        TournamentInfo info = new TournamentInfo(2, "RoundRobin", true, false);
+        TournamentInfo info = new TournamentInfo(1, "Test", true, true);
+
+        assertEquals("Registration", info.getStatusText());
+    }
+
+    @Test
+    void testToStringFormat()
+    {
+        TournamentInfo info = new TournamentInfo(3, "RoundRobin", true, false);
+
+        String expected = "Tournament 3 - RoundRobin [Active]";
+        assertEquals(expected, info.toString());
+    }
+
+    @Test
+    void testToStringClosed()
+    {
+        TournamentInfo info = new TournamentInfo(4, "ClosedTest", false, false);
 
         String text = info.toString();
 
-        assertTrue(text.contains("2"));
-        assertTrue(text.contains("RoundRobin"));
-        assertTrue(text.contains("Active"));
+        assertTrue(text.contains("Closed"));
+    }
+
+    @Test
+    void testDifferentInstancesAreIndependent()
+    {
+        TournamentInfo a = new TournamentInfo(1, "A", true, false);
+        TournamentInfo b = new TournamentInfo(2, "B", false, true);
+
+        assertNotEquals(a.getId(), b.getId());
+        assertNotEquals(a.getName(), b.getName());
     }
 }

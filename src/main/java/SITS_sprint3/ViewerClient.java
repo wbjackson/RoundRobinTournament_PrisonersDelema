@@ -15,7 +15,7 @@ import javafx.application.Platform;
 public class ViewerClient
 {
     private final String localIP;
-    private int localPort;
+    private final int localPort;
     private TournamentModel model;
     private HttpServer server;
     private final RestClient restClient;
@@ -23,7 +23,7 @@ public class ViewerClient
     public ViewerClient()
     {
         this.localIP = "localhost";
-        this.localPort = 8095;
+        this.localPort = 8081;
         this.restClient = RestClient.create();
     }
 
@@ -93,6 +93,11 @@ public class ViewerClient
 
     public List<TournamentInfo> fetchTournamentList(String serverIP, String serverPort)
     {
+        if (serverIP == null || serverIP.isBlank() || serverPort == null || serverPort.isBlank())
+        {
+            return new ArrayList<>();
+        }
+
         String baseUrl = "http://" + serverIP + ":" + serverPort;
 
         try
@@ -106,18 +111,17 @@ public class ViewerClient
         }
         catch (Exception e)
         {
-            System.out.println("Fetch tournaments fallback used: " + e.getMessage());
-
-            List<TournamentInfo> test = new ArrayList<>();
-            test.add(new TournamentInfo(1, "Test Tournament 1", true, false));
-            test.add(new TournamentInfo(2, "Test Tournament 2", false, true));
-
-            return test;
+            return new ArrayList<>();
         }
     }
 
     public List<String> fetchTournamentMoves(String serverIP, String serverPort, int tournamentId)
     {
+        if (serverIP == null || serverIP.isBlank() || serverPort == null || serverPort.isBlank())
+        {
+            return new ArrayList<>();
+        }
+
         String baseUrl = "http://" + serverIP + ":" + serverPort;
 
         try
@@ -131,7 +135,6 @@ public class ViewerClient
         }
         catch (Exception e)
         {
-            System.out.println("Fetch moves failed: " + e.getMessage());
             return new ArrayList<>();
         }
     }
@@ -180,7 +183,7 @@ public class ViewerClient
 
                 results.add(new TournamentInfo(
                         id,
-                        "RoundRobin Tournament" + id,
+                        "RoundRobin Tournament " + id,
                         active,
                         registrationOpen
                 ));
@@ -224,42 +227,6 @@ public class ViewerClient
         return results;
     }
 
-    public void registerViewerWithServer(String serverIP, String serverPort, int tournamentId)
-    {
-        String baseUrl = "http://" + serverIP + ":" + serverPort;
-
-        try
-        {
-            restClient.get()
-                    .uri(baseUrl + "/server/viewer/register/"
-                            + tournamentId + "/" + localIP + "/" + localPort)
-                    .retrieve()
-                    .body(String.class);
-        }
-        catch (Exception e)
-        {
-            System.out.println("Viewer registration failed: " + e.getMessage());
-        }
-    }
-
-    public void unregisterViewerFromServer(String serverIP, String serverPort, int tournamentId)
-    {
-        String baseUrl = "http://" + serverIP + ":" + serverPort;
-
-        try
-        {
-            restClient.get()
-                    .uri(baseUrl + "/server/viewer/unregister/"
-                            + tournamentId + "/" + localIP + "/" + localPort)
-                    .retrieve()
-                    .body(String.class);
-        }
-        catch (Exception e)
-        {
-            System.out.println("Viewer unregistration failed: " + e.getMessage());
-        }
-    }
-
     public String getLocalIP()
     {
         return localIP;
@@ -270,8 +237,8 @@ public class ViewerClient
         return localPort;
     }
 
-    public void setLocalPort(int localPort)
+    public HttpServer getServer()
     {
-        this.localPort = localPort;
+        return server;
     }
 }

@@ -2,6 +2,10 @@ package SITS_sprint3;
 
 import java.util.Objects;
 
+import SITS_sprint4.CommandInvoker;
+import SITS_sprint4.ConnectCommand;
+import SITS_sprint4.RefreshTournamentsCommand;
+import SITS_sprint4.ViewTournamentCommand;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
@@ -16,6 +20,9 @@ public class TournamentsViewController
 {
     private TournamentModel model;
     private RemoteClientViewerApp app;
+
+    
+    private CommandInvoker commandInvoker;
 
     @FXML
     private TextField ipField;
@@ -36,7 +43,7 @@ public class TournamentsViewController
     {
         this.model = model;
 
-        if (tournamentList != null)
+        if (tournamentList != null && model != null)
         {
             tournamentList.setItems(model.getObservableTournaments());
         }
@@ -50,6 +57,9 @@ public class TournamentsViewController
     @FXML
     public void initialize()
     {
+        
+        commandInvoker = new CommandInvoker();
+
         if (tournamentList != null)
         {
             tournamentList.setCellFactory(listView -> new TournamentCell());
@@ -61,8 +71,13 @@ public class TournamentsViewController
     {
         try
         {
-            String ip = ipField.getText();
-            String port = portField.getText();
+            if (model == null)
+            {
+                return;
+            }
+
+            String ip = ipField != null ? ipField.getText() : null;
+            String port = portField != null ? portField.getText() : null;
 
             if (ip == null || ip.trim().isEmpty())
             {
@@ -76,19 +91,18 @@ public class TournamentsViewController
                 return;
             }
 
-            model.connectToServer(ip, port);
-            model.startViewerClient();
-            model.fetchTournaments();
+            
+            commandInvoker.setCommand(new ConnectCommand(model, ip, port));
+            commandInvoker.executeCommand();
 
-            tournamentList.setItems(model.getObservableTournaments());
-            tournamentList.refresh();
+            refreshViewState();
         }
         catch (Exception e)
         {
             System.out.println("Connect error: " + e.getMessage());
         }
     }
-    
+
     @FXML
     public void handleRefresh()
     {
@@ -100,23 +114,18 @@ public class TournamentsViewController
                 return;
             }
 
-            model.fetchTournaments();
-            tournamentList.setItems(model.getObservableTournaments());
-            tournamentList.refresh();
+            
+            commandInvoker.setCommand(new RefreshTournamentsCommand(model));
+            commandInvoker.executeCommand();
+
+            refreshViewState();
         }
         catch (Exception e)
         {
             System.out.println("Refresh error: " + e.getMessage());
         }
     }
-    //
-    //ournament typre atm is binary 0 - > Move View "Wanna join this Tournament?", currently a viewer of the 
-    //									  1 - > Move View, CLOSED TOURNAMENT, Actively updating tournament.
-    // Case i want to solve:
-    //I want to join an active registration T, join, wait for CLOSE, then perform what ever action yaddah yaddah yaddah
-    //create default endpoint messages for no tournaments in the listView.
-    // 
-    // 
+
     public void refreshViewState()
     {
         if (model == null)
@@ -143,17 +152,16 @@ public class TournamentsViewController
 
     private void handleSelectTournament(TournamentInfo tournament)
     {
-        if (tournament == null)
+        if (tournament == null || model == null)
         {
             return;
         }
 
         try
         {
-            model.selectTournament(tournament);
-            model.fetchMovesForSelectedTournament();
-            model.registerForUpdates();
-            app.switchToMoveView();
+            
+            commandInvoker.setCommand(new ViewTournamentCommand(model, app, tournament));
+            commandInvoker.executeCommand();
         }
         catch (Exception e)
         {
