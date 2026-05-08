@@ -1,4 +1,3 @@
-
 package SITS_sprint2;
 
 import org.springframework.web.client.RestClient;
