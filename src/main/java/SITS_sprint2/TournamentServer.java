@@ -5,12 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 import SITS_sprint1.AGame;
 import SITS_sprint1.MoveObserver;
 import SITS_sprint1.Robot;
 import SITS_sprint1.RoundRobinTournament;
 import SITS_sprint1.Tournament;
 
+
+@SpringBootApplication
 public class TournamentServer
 {
     private static class HostedTournament
@@ -196,4 +201,9 @@ public class TournamentServer
 
         return tournamentInfo.toString();
     }
+    
+    public static void main(String[] args) {
+    	SpringApplication.run(TournamentServer.class, args);
+    }
+
 }

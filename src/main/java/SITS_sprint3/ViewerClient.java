@@ -23,7 +23,7 @@ public class ViewerClient
     public ViewerClient()
     {
         this.localIP = "localhost";
-        this.localPort = 8081;
+        this.localPort = 8082;
         this.restClient = RestClient.create();
     }
 
@@ -41,14 +41,21 @@ public class ViewerClient
 
         try
         {
+            //System.out.println(localPort);
+
             server = HttpServer.create(new InetSocketAddress(localPort), 0);
             registerEndpoints();
             server.start();
         }
         catch (IOException e)
         {
+            //System.out.println(localPort);
+            //System.out.println(e);
+
             throw new RuntimeException("Failed to start ViewerClient server.", e);
+
         }
+        
     }
 
     public void stopServer()
