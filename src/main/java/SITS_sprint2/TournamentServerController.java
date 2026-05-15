@@ -13,7 +13,7 @@ import java.util.ArrayList;
 @RestController
 @RequestMapping("/server")
 public class TournamentServerController
-{
+{										//REST controller for TounramentServer URLs
     private TournamentServer server;
 
     public TournamentServerController()

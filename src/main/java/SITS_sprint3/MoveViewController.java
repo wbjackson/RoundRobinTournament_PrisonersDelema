@@ -15,7 +15,7 @@ public class MoveViewController
     private TournamentModel model;
     private RemoteClientViewerApp app;
 
-    private CommandInvoker commandInvoker;
+    private CommandInvoker commandInvoker;	 
 
     private Timeline refreshTimeline;
 

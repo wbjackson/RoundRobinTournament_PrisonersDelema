@@ -5,7 +5,10 @@ import org.springframework.web.bind.annotation.*;
 import SITS_sprint1.OnlyDefectRobot;
 import SITS_sprint1.Robot;
 
-@RestController
+@RestController					//REST controller for robot/client actions. 
+						//It receives URL requests and forwards them into the tournament logic.
+						
+
 @RequestMapping("/")
 public class RobotClientController
 {

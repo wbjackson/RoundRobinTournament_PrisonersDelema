@@ -7,7 +7,9 @@ public class RemoteClientRobot extends Robot
 {
     private String ip;
     private String port;
-    private RestClient restClient;
+    private RestClient restClient; // remote representation of Network/client behavior for robots (RRPD)
+    
+    								//Game specific
 
     public RemoteClientRobot(String name, String ip, String port)
     {

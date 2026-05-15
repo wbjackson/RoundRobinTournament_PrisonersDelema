@@ -7,7 +7,7 @@ import SITS_sprint1.Robot;
 
 public class HumanRobot extends Robot
 {
-    private Scanner scanner;
+    private Scanner scanner;		//Game specific
     private PrintStream out;
 
     public HumanRobot(String name)

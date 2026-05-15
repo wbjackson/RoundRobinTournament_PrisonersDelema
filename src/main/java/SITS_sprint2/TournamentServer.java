@@ -13,8 +13,10 @@ import SITS_sprint1.MoveObserver;
 import SITS_sprint1.Robot;
 import SITS_sprint1.RoundRobinTournament;
 import SITS_sprint1.Tournament;
-
-
+				//main tournament server model/manager, but not GUI
+				// Stores and manages the tournaments after spring server is running. '
+				// starts tournaments, REG, ACTIVE, FINISHED
+				//stores move history
 @SpringBootApplication
 public class TournamentServer
 {

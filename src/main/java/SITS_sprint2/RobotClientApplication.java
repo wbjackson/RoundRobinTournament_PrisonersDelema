@@ -8,7 +8,8 @@ public class RobotClientApplication
 {
 	public static void main(String[] args)
 	{
-	    start(args);
+	    start(args);						// launcher for springboot
+	    									//potential name change Tourn server app
 	}
 
 	static void start(String[] args)
