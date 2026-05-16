@@ -30,13 +30,13 @@ class TournamentTest
     {
         private final String move;
         private String remembered;
-
+        
         public FixedMoveRobot(String name, String move)
         {
             super(name);
             this.move = move;
         }
-
+        	
         @Override
         public String makeMove()
         {
@@ -54,6 +54,21 @@ class TournamentTest
             return remembered;
         }
     }
+    
+    private static class HumanControlledFixedMoveRobot extends FixedMoveRobot
+    {
+        public HumanControlledFixedMoveRobot(String name, String move)
+        {
+            super(name, move);
+        }
+
+        @Override
+        public boolean isHumanControlled()
+        {
+            return true;
+        }
+    }
+
 
     private static class CountingMoveObserver implements MoveObserver
     {
@@ -80,10 +95,6 @@ class TournamentTest
             lastMessage = scoreMessage;
         }
     }
-
-    // =========================
-    // ROBOT TESTS
-    // =========================
 
     @Test
     void testRobotStartsWithCorrectNameScoreAndRecord()
@@ -209,10 +220,6 @@ class TournamentTest
 
         assertDoesNotThrow(() -> robot.rememberOpponentMove("Cooperate"));
     }
-
-    // =========================
-    // GAME LOGIC TESTS
-    // =========================
 
     @Test
     void testPlayGameResetsScoresBeforePlaying()
@@ -342,10 +349,6 @@ class TournamentTest
         assertEquals(0, p2.getScore());
         assertEquals("A", winner.getName());
     }
-
-    // =========================
-    // OBSERVER / AGAME TESTS
-    // =========================
 
     @Test
     void testRegisterMoveObserver()
@@ -488,10 +491,6 @@ class TournamentTest
         assertEquals(1, observer2.count);
     }
 
-    // =========================
-    // LOGGING SYSTEM TESTS
-    // =========================
-
     @Test
     void testMoveLoggingSystemWritesToFile() throws IOException
     {
@@ -544,10 +543,6 @@ class TournamentTest
         cleanup();
     }
 
-    // =========================
-    // PRISONER DELIMMA GAME LOGGING TESTS
-    // =========================
-
     @Test
     void testPrisonerDelimmaGameWritesFormattedGameLog() throws IOException
     {
@@ -568,10 +563,6 @@ class TournamentTest
         assertTrue(contents.contains("Round 2: Alpha -> Cooperate, Beta -> Defect"));
         assertTrue(contents.contains("After round 2: Alpha=0, Beta=10"));
     }
-
-    // =========================
-    // TOURNAMENT TESTS
-    // =========================
 
     @Test
     void testTournamentStoresParticipants()
@@ -866,13 +857,95 @@ class TournamentTest
         assertTrue(contents.contains("TOURNAMENT RESULT: Winner = Alpha"));
     }
 
-    // =========================
-    // MAIN TEST
-    // =========================
-
     @Test
     void testMainRuns()
     {
         assertDoesNotThrow(() -> Main.main(new String[0]));
+    }
+    
+    @Test
+    void testNormalRobotIsNotHumanControlledByDefault()
+    {
+        Robot robot = new OnlyDefectRobot("Defector");
+
+        assertFalse(robot.isHumanControlled());
+    }
+
+    @Test
+    void testPrisonerDelimmaGameLogsWaitingMessageForHumanControlledFirstRobot()
+    {
+        Robot p1 = new HumanControlledFixedMoveRobot("Remote1", "Cooperate");
+        Robot p2 = new FixedMoveRobot("Bot", "Defect");
+
+        AGame game = new PrisonerDelimmaGame(1);
+        CountingMoveObserver observer = new CountingMoveObserver();
+
+        game.registerMoveObserver(observer);
+        game.playGame(p1, p2);
+
+        assertTrue(observer.count >= 2);
+    }
+
+    @Test
+    void testPrisonerDelimmaGameWaitingMessageTextForHumanControlledRobot()
+    {
+        Robot p1 = new HumanControlledFixedMoveRobot("Remote1", "Cooperate");
+        Robot p2 = new FixedMoveRobot("Bot", "Defect");
+
+        AGame game = new PrisonerDelimmaGame(1);
+
+        ArrayList<String> messages = new ArrayList<>();
+        game.registerMoveObserver(messages::add);
+
+        game.playGame(p1, p2);
+
+        assertTrue(messages.contains("Waiting for Remote1 to make a move..."));
+        assertTrue(messages.contains("Round 1: Remote1 -> Cooperate, Bot -> Defect"));
+    }
+
+    @Test
+    void testPrisonerDelimmaGameLogsWaitingMessageForHumanControlledSecondRobot()
+    {
+        Robot p1 = new FixedMoveRobot("Bot", "Defect");
+        Robot p2 = new HumanControlledFixedMoveRobot("Remote1", "Cooperate");
+
+        AGame game = new PrisonerDelimmaGame(1);
+
+        ArrayList<String> messages = new ArrayList<>();
+        game.registerMoveObserver(messages::add);
+
+        game.playGame(p1, p2);
+
+        assertTrue(messages.contains("Waiting for Remote1 to make a move..."));
+        assertTrue(messages.contains("Round 1: Bot -> Defect, Remote1 -> Cooperate"));
+    }
+
+    @Test
+    void testRoundRobinTournamentLogsWinnerToMoveObserver()
+    {
+        ArrayList<Robot> robots = new ArrayList<>();
+        robots.add(new OnlyDefectRobot("Defector"));
+        robots.add(new PrisonerSameRobot("CopyCat"));
+
+        AGame game = new PrisonerDelimmaGame(1);
+
+        ArrayList<String> messages = new ArrayList<>();
+        game.registerMoveObserver(messages::add);
+
+        Tournament tournament = new RoundRobinTournament(robots, game);
+        tournament.runTournament();
+
+        boolean foundWinnerMessage = false;
+
+        for (String message : messages)
+        {
+            if (message.contains("TOURNAMENT WINNER:"))
+            {
+                foundWinnerMessage = true;
+                assertTrue(message.contains("Defector") || message.contains("CopyCat"));
+            }
+        }
+
+        assertTrue(foundWinnerMessage);
     }
 }

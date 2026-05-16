@@ -12,6 +12,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import javafx.application.Platform;
 
+
 public class ViewerClient
 {
     private final String localIP;
@@ -20,10 +21,23 @@ public class ViewerClient
     private HttpServer server;
     private final RestClient restClient;
 
+   
+    
+    
     public ViewerClient()
     {
-        this.localIP = "localhost";
-        this.localPort = 8082;
+        this("localhost", 8082);
+    }
+
+    ViewerClient(int localPort)
+    {
+        this("localhost", localPort);
+    }
+
+    ViewerClient(String localIP, int localPort)
+    {
+        this.localIP = localIP;
+        this.localPort = localPort;
         this.restClient = RestClient.create();
     }
 
@@ -202,7 +216,7 @@ public class ViewerClient
 
         return results;
     }
-
+    
     private List<String> parseMoveHistory(String raw)
     {
         List<String> results = new ArrayList<>();
@@ -212,14 +226,24 @@ public class ViewerClient
             return results;
         }
 
-        String cleaned = raw.replace("[", "").replace("]", "").trim();
+        String cleaned = raw.trim();
+
+        if (cleaned.startsWith("["))
+        {
+            cleaned = cleaned.substring(1);
+        }
+
+        if (cleaned.endsWith("]"))
+        {
+            cleaned = cleaned.substring(0, cleaned.length() - 1);
+        }
 
         if (cleaned.isBlank())
         {
             return results;
         }
 
-        String[] parts = cleaned.split(",");
+        String[] parts = cleaned.split(", (?=MATCH:|Round |TOURNAMENT|=)");
 
         for (String part : parts)
         {
@@ -241,6 +265,11 @@ public class ViewerClient
 
     public int getLocalPort()
     {
+        if (server != null)
+        {
+            return server.getAddress().getPort();
+        }
+
         return localPort;
     }
 

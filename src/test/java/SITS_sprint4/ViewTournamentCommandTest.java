@@ -21,7 +21,7 @@ class ViewTournamentCommandTest
 
         server.createContext("/server/moves/1", exchange ->
         {
-            String response = "[Move A, Move B]";
+            String response = "[MATCH: A vs B, Round 1: A -> Defect, B -> Cooperate]";
             exchange.sendResponseHeaders(200, response.getBytes().length);
 
             try (OutputStream os = exchange.getResponseBody())
@@ -44,8 +44,8 @@ class ViewTournamentCommandTest
 
             assertSame(tournament, model.getSelectedTournament());
             assertEquals(2, model.getObservableMoves().size());
-            assertTrue(model.getObservableMoves().contains("Move A"));
-            assertTrue(model.getObservableMoves().contains("Move B"));
+            assertTrue(model.getObservableMoves().contains("MATCH: A vs B"));
+            assertTrue(model.getObservableMoves().contains("Round 1: A -> Defect, B -> Cooperate"));
         }
         finally
         {
@@ -87,5 +87,21 @@ class ViewTournamentCommandTest
         command.execute();
 
         assertNull(model.getSelectedTournament());
+    }
+    
+    @Test
+    void testExecuteWithConnectedModelButBadMoveServerClearsOldMoves()
+    {
+        TournamentModel model = new TournamentModel();
+        TournamentInfo tournament = new TournamentInfo(1, "Bad Server Test", true, false);
+
+        model.connectToServer("localhost", "9999");
+        model.addMove("Old Move");
+
+        Command command = new ViewTournamentCommand(model, null, tournament);
+        command.execute();
+
+        assertSame(tournament, model.getSelectedTournament());
+        assertEquals(0, model.getObservableMoves().size());
     }
 }

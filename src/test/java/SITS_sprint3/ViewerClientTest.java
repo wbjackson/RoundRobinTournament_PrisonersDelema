@@ -9,17 +9,29 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.net.HttpURLConnection;
 
 import com.sun.net.httpserver.HttpServer;
 
 import javafx.application.Platform;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class ViewerClientTest
 {
+    private ViewerClient activeClient;
+
+    @AfterEach
+    void cleanupViewerClient()
+    {
+        if (activeClient != null)
+        {
+            activeClient.stopServer();
+            activeClient = null;
+        }
+    }
+
     @BeforeAll
     static void startJavaFx()
     {
@@ -85,6 +97,7 @@ public class ViewerClientTest
             assertTrue(list.get(0).isRegistrationOpen());
             assertTrue(list.get(1).isActive());
             assertFalse(list.get(2).isActive());
+            assertFalse(list.get(2).isRegistrationOpen());
         }
         finally
         {
@@ -153,6 +166,8 @@ public class ViewerClientTest
                     client.fetchTournamentList("localhost", String.valueOf(port));
 
             assertEquals(1, list.size());
+            assertEquals(2, list.get(0).getId());
+            assertTrue(list.get(0).isActive());
         }
         finally
         {
@@ -179,7 +194,7 @@ public class ViewerClientTest
 
         server.createContext("/server/moves/1", exchange ->
         {
-            String response = "[Move A, Move B]";
+            String response = "[MATCH: A vs B, Round 1: A -> Defect, B -> Cooperate]";
             exchange.sendResponseHeaders(200, response.getBytes().length);
 
             try (OutputStream os = exchange.getResponseBody())
@@ -199,8 +214,8 @@ public class ViewerClientTest
                     client.fetchTournamentMoves("localhost", String.valueOf(port), 1);
 
             assertEquals(2, moves.size());
-            assertEquals("Move A", moves.get(0));
-            assertEquals("Move B", moves.get(1));
+            assertEquals("MATCH: A vs B", moves.get(0));
+            assertEquals("Round 1: A -> Defect, B -> Cooperate", moves.get(1));
         }
         finally
         {
@@ -257,10 +272,16 @@ public class ViewerClientTest
     @Test
     void testStartAndStopServerDoesNotThrow()
     {
-        ViewerClient client = new ViewerClient();
+        activeClient = new ViewerClient(0);
 
-        assertDoesNotThrow(client::startServer);
-        assertDoesNotThrow(client::stopServer);
+        assertDoesNotThrow(activeClient::startServer);
+        assertNotNull(activeClient.getServer());
+        assertTrue(activeClient.getLocalPort() > 0);
+
+        assertDoesNotThrow(activeClient::stopServer);
+        assertNull(activeClient.getServer());
+
+        activeClient = null;
     }
 
     @Test
@@ -270,84 +291,65 @@ public class ViewerClientTest
 
         assertDoesNotThrow(client::stopServer);
     }
-    
+
     @Test
     void testStartServerTwiceDoesNotThrow()
     {
-        ViewerClient client = new ViewerClient();
+        activeClient = new ViewerClient(0);
 
-        try
-        {
-            client.startServer();
+        activeClient.startServer();
 
-            assertNotNull(client.getServer());
-            assertDoesNotThrow(client::startServer);
-        }
-        finally
-        {
-            client.stopServer();
-        }
+        assertNotNull(activeClient.getServer());
+        assertTrue(activeClient.getLocalPort() > 0);
+        assertDoesNotThrow(activeClient::startServer);
     }
 
     @Test
     void testReceiveMoveEndpointRejectsGet() throws Exception
     {
-        ViewerClient client = new ViewerClient();
+        activeClient = new ViewerClient(0);
 
-        try
-        {
-            client.startServer();
+        activeClient.startServer();
 
-            URL url = new URL("http://localhost:" + client.getLocalPort() + "/receiveMove");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
+        URL url = new URL("http://localhost:" + activeClient.getLocalPort() + "/receiveMove");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-            assertEquals(405, connection.getResponseCode());
+        connection.setRequestMethod("GET");
 
-            connection.disconnect();
-        }
-        finally
-        {
-            client.stopServer();
-        }
+        assertEquals(405, connection.getResponseCode());
+
+        connection.disconnect();
     }
 
     @Test
     void testReceiveMoveEndpointAcceptsPost() throws Exception
     {
         TournamentModel model = new TournamentModel();
-        ViewerClient client = new ViewerClient();
-        client.setModel(model);
 
-        try
+        activeClient = new ViewerClient(0);
+        activeClient.setModel(model);
+        activeClient.startServer();
+
+        URL url = new URL("http://localhost:" + activeClient.getLocalPort() + "/receiveMove");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+
+        try (OutputStream os = connection.getOutputStream())
         {
-            client.startServer();
-
-            URL url = new URL("http://localhost:" + client.getLocalPort() + "/receiveMove");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-            connection.setRequestMethod("POST");
-            connection.setDoOutput(true);
-
-            try (OutputStream os = connection.getOutputStream())
-            {
-                os.write("Endpoint Move".getBytes());
-            }
-
-            assertEquals(200, connection.getResponseCode());
-
-            waitForFx();
-
-            assertTrue(model.getObservableMoves().contains("Endpoint Move"));
-
-            connection.disconnect();
+            os.write("Endpoint Move".getBytes());
         }
-        finally
-        {
-            client.stopServer();
-        }
+
+        assertEquals(200, connection.getResponseCode());
+
+        waitForFx();
+
+        assertTrue(model.getObservableMoves().contains("Endpoint Move"));
+
+        connection.disconnect();
     }
-    
+
     @Test
     void testFetchTournamentListWithInvalidInput()
     {
@@ -358,7 +360,7 @@ public class ViewerClientTest
         assertTrue(client.fetchTournamentList("localhost", null).isEmpty());
         assertTrue(client.fetchTournamentList("localhost", "").isEmpty());
     }
-    
+
     @Test
     void testFetchTournamentMovesWithInvalidInput()
     {
@@ -369,7 +371,7 @@ public class ViewerClientTest
         assertTrue(client.fetchTournamentMoves("localhost", null, 1).isEmpty());
         assertTrue(client.fetchTournamentMoves("localhost", "", 1).isEmpty());
     }
-    
+
     @Test
     void testParseTournamentStatusListNull()
     {
@@ -377,12 +379,50 @@ public class ViewerClientTest
 
         assertTrue(client.fetchTournamentList("invalid", "invalid").isEmpty());
     }
-    
+
     @Test
     void testParseMoveHistoryNull()
     {
         ViewerClient client = new ViewerClient();
 
         assertTrue(client.fetchTournamentMoves("invalid", "invalid", 1).isEmpty());
+    }
+
+    @Test
+    void testFetchMovesKeepsFullRoundLinesWithCommasTogether() throws Exception
+    {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+
+        server.createContext("/server/moves/1", exchange ->
+        {
+            String response = "[MATCH: A vs B, Round 1: A -> Defect, B -> Cooperate, Round 2: A -> Defect, B -> Defect, TOURNAMENT WINNER: A | Record: 10 | Score: 5]";
+            exchange.sendResponseHeaders(200, response.getBytes().length);
+
+            try (OutputStream os = exchange.getResponseBody())
+            {
+                os.write(response.getBytes());
+            }
+        });
+
+        server.start();
+        int port = server.getAddress().getPort();
+
+        try
+        {
+            ViewerClient client = new ViewerClient();
+
+            List<String> moves =
+                    client.fetchTournamentMoves("localhost", String.valueOf(port), 1);
+
+            assertEquals(4, moves.size());
+            assertEquals("MATCH: A vs B", moves.get(0));
+            assertEquals("Round 1: A -> Defect, B -> Cooperate", moves.get(1));
+            assertEquals("Round 2: A -> Defect, B -> Defect", moves.get(2));
+            assertEquals("TOURNAMENT WINNER: A | Record: 10 | Score: 5", moves.get(3));
+        }
+        finally
+        {
+            server.stop(0);
+        }
     }
 }

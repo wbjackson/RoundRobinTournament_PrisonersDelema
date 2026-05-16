@@ -18,33 +18,361 @@ import SITS_sprint1.OnlyDefectRobot;
 import SITS_sprint1.PrisonerDelimmaGame;
 import SITS_sprint1.PrisonerSameRobot;
 import SITS_sprint1.Robot;
+import SITS_sprint2.UrlHumanRobot;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 class TournamentServerTest
 {
-    @Test
-    void testClientMakeDecisionUsesHostedRobot()
-    {
-        RobotClientController client = new RobotClientController(new OnlyDefectRobot("Hosted"));
-        assertEquals("Defect", client.makeDecision());
-    }
 
-    @Test
-    void testClientCanUseDifferentHostedRobot()
-    {
-        RobotClientController client = new RobotClientController(new PrisonerSameRobot("CopyCat"));
-        assertEquals("Cooperate", client.makeDecision());
-    }
+	@Test
+	void testRobotClientControllerDefaultConstructorCreatesDefaultRobot()
+	{
+	    RobotClientController controller = new RobotClientController();
 
-    @Test
-    void testClientRememberOpponentMoveUpdatesHostedRobot()
-    {
-        PrisonerSameRobot robot = new PrisonerSameRobot("CopyCat");
-        RobotClientController client = new RobotClientController(robot);
+	    assertNotNull(controller.getHostedRobot("RemoteHostedRobot"));
+	    assertEquals("Defect", controller.makeDecision("RemoteHostedRobot"));
+	}
 
-        client.rememberOpponentMove("Defect");
+	@Test
+	void testRobotClientControllerCanHostTwoNamedRobotsSeparately()
+	{
+	    RobotClientController controller = new RobotClientController();
 
-        assertEquals("Defect", client.makeDecision());
-    }
+	    String remote1Result = controller.setRobotType("Remote1", "defector");
+	    String remote2Result = controller.setRobotType("Remote2", "copycat");
+
+	    assertTrue(remote1Result.contains("Remote1"));
+	    assertTrue(remote2Result.contains("Remote2"));
+
+	    assertEquals("Defect", controller.makeDecision("Remote1"));
+	    assertEquals("Cooperate", controller.makeDecision("Remote2"));
+	}
+
+	@Test
+	void testRobotClientControllerRememberOpponentMoveUsesCorrectNamedRobot()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "copycat");
+	    controller.setRobotType("Remote2", "copycat");
+
+	    controller.rememberOpponentMove("Remote1", "Defect");
+	    controller.rememberOpponentMove("Remote2", "Cooperate");
+
+	    assertEquals("Defect", controller.makeDecision("Remote1"));
+	    assertEquals("Cooperate", controller.makeDecision("Remote2"));
+	}
+
+	@Test
+	void testRobotClientControllerSetRobotTypeRejectsInvalidRobotName()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    String result = controller.setRobotType("", "defector");
+
+	    assertTrue(result.contains("ERROR"));
+	}
+
+	@Test
+	void testRobotClientControllerSetRobotTypeRejectsInvalidType()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    String result = controller.setRobotType("Remote1", "banana");
+
+	    assertTrue(result.contains("ERROR"));
+	}
+
+	@Test
+	void testRobotClientControllerMakeDecisionMissingRobotDefaultsToDefect()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    String result = controller.makeDecision("MissingRobot");
+
+	    assertEquals("Defect", result);
+	}
+
+	@Test
+	void testRobotClientControllerRememberOpponentMoveMissingRobotReturnsError()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    String result = controller.rememberOpponentMove("MissingRobot", "Cooperate");
+
+	    assertTrue(result.contains("ERROR"));
+	}
+
+	@Test
+	void testRobotClientControllerRememberOpponentMoveInvalidMoveReturnsError()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "copycat");
+
+	    String result = controller.rememberOpponentMove("Remote1", "");
+
+	    assertTrue(result.contains("ERROR"));
+	}
+
+	@Test
+	void testRobotClientControllerCurrentRobotShowsCorrectNamedRobot()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "random");
+
+	    String result = controller.getCurrentRobot("Remote1");
+
+	    assertTrue(result.contains("Remote1"));
+	    assertTrue(result.contains("RandomRobot"));
+	}
+
+	@Test
+	void testRobotClientControllerCurrentRobotMissingRobot()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    String result = controller.getCurrentRobot("MissingRobot");
+
+	    assertTrue(result.contains("No robot found"));
+	}
+
+	@Test
+	void testRobotClientControllerGetAllRobotsIncludesNamedRobots()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "defector");
+	    controller.setRobotType("Remote2", "copycat");
+
+	    String result = controller.getAllRobots();
+
+	    assertTrue(result.contains("Remote1"));
+	    assertTrue(result.contains("Remote2"));
+	}
+
+	@Test
+	void testRobotClientControllerCanSetHumanMoveForNamedHumanRobot()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "human");
+
+	    String setResult = controller.setHumanMove("Remote1", "Cooperate");
+	    String currentResult = controller.getHumanMove("Remote1");
+
+	    assertTrue(setResult.contains("Cooperate"));
+	    assertTrue(currentResult.contains("Cooperate"));
+	}
+
+	@Test
+	void testRobotClientControllerSetHumanMoveFailsForNonHumanRobot()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "defector");
+
+	    String result = controller.setHumanMove("Remote1", "Cooperate");
+
+	    assertTrue(result.contains("ERROR"));
+	}
+
+	@Test
+	void testRobotClientControllerHumanCurrentFailsForNonHumanRobot()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "defector");
+
+	    String result = controller.getHumanMove("Remote1");
+
+	    assertTrue(result.contains("ERROR"));
+	}
+
+	@Test
+	void testRobotClientControllerHumanOpponentMove()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "human");
+	    controller.rememberOpponentMove("Remote1", "Defect");
+
+	    String result = controller.getHumanOpponentMove("Remote1");
+
+	    assertTrue(result.contains("Remote1"));
+	    assertTrue(result.contains("Defect"));
+	}
+
+	@Test
+	void testRobotClientControllerIsHumanRobot()
+	{
+	    RobotClientController controller = new RobotClientController();
+
+	    controller.setRobotType("Remote1", "human");
+	    controller.setRobotType("Remote2", "defector");
+
+	    assertEquals("true", controller.isHumanRobot("Remote1"));
+	    assertEquals("false", controller.isHumanRobot("Remote2"));
+	    assertEquals("false", controller.isHumanRobot("MissingRobot"));
+	}
+
+	@Test
+	void testUrlHumanRobotWaitsUntilMoveIsSubmitted() throws Exception
+	{
+	    UrlHumanRobot robot = new UrlHumanRobot("Remote1");
+
+	    ExecutorService executor = Executors.newSingleThreadExecutor();
+	    Future<String> future = executor.submit(() -> robot.makeMove());
+
+	    try
+	    {
+	        assertThrows(TimeoutException.class, () -> future.get(300, TimeUnit.MILLISECONDS));
+
+	        String result = robot.setNextMove("Cooperate");
+
+	        assertTrue(result.contains("Cooperate"));
+	        assertEquals("Cooperate", future.get(2, TimeUnit.SECONDS));
+	        assertEquals("No move currently submitted.", robot.getNextMove());
+	    }
+	    finally
+	    {
+	        executor.shutdownNow();
+	    }
+	}
+
+	@Test
+	void testUrlHumanRobotRejectsInvalidMove()
+	{
+	    UrlHumanRobot robot = new UrlHumanRobot("Remote1");
+
+	    String result = robot.setNextMove("banana");
+
+	    assertTrue(result.contains("ERROR"));
+	    assertEquals("No move currently submitted.", robot.getNextMove());
+	}
+
+	@Test
+	void testUrlHumanRobotRemembersOpponentMove()
+	{
+	    UrlHumanRobot robot = new UrlHumanRobot("Remote1");
+
+	    robot.rememberOpponentMove("Defect");
+
+	    assertEquals("Defect", robot.getLastOpponentMove());
+	}
+
+	@Test
+	void testRemoteClientRobotMakeMoveUsesRobotNameInUrl() throws Exception
+	{
+	    HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+
+	    server.createContext("/move/Remote", exchange ->
+	    {
+	        String response = "Cooperate";
+	        exchange.sendResponseHeaders(200, response.getBytes().length);
+
+	        try (OutputStream os = exchange.getResponseBody())
+	        {
+	            os.write(response.getBytes());
+	        }
+	    });
+
+	    server.start();
+	    int port = server.getAddress().getPort();
+
+	    try
+	    {
+	        RemoteClientRobot robot = new RemoteClientRobot("Remote1", "localhost", String.valueOf(port));
+
+	        assertEquals("Cooperate", robot.makeMove());
+	    }
+	    finally
+	    {
+	        server.stop(0);
+	    }
+	}
+
+	@Test
+	void testRemoteClientRobotRememberOpponentMoveUsesRobotNameInUrl() throws Exception
+	{
+	    final String[] remembered = {null};
+
+	    HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+
+	    server.createContext("/remember/Remote1/Defect", exchange ->
+	    {
+	        remembered[0] = "Remote1 remembered Defect";
+
+	        String response = "Remembered";
+	        exchange.sendResponseHeaders(200, response.getBytes().length);
+
+	        try (OutputStream os = exchange.getResponseBody())
+	        {
+	            os.write(response.getBytes());
+	        }
+	    });
+
+	    server.start();
+	    int port = server.getAddress().getPort();
+
+	    try
+	    {
+	        RemoteClientRobot robot = new RemoteClientRobot("Remote1", "localhost", String.valueOf(port));
+
+	        robot.rememberOpponentMove("Defect");
+
+	        assertEquals("Remote1 remembered Defect", remembered[0]);
+	    }
+	    finally
+	    {
+	        server.stop(0);
+	    }
+	}
+
+	@Test
+	void testRemoteClientRobotIsHumanControlledUsesNamedEndpoint() throws Exception
+	{
+	    HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+
+	    server.createContext("/robot/isHuman/Remote", exchange ->
+	    {
+	        String response = "true";
+	        exchange.sendResponseHeaders(200, response.getBytes().length);
+
+	        try (OutputStream os = exchange.getResponseBody())
+	        {
+	            os.write(response.getBytes());
+	        }
+	    });
+
+	    server.start();
+	    int port = server.getAddress().getPort();
+
+	    try
+	    {
+	        RemoteClientRobot robot = new RemoteClientRobot("Remote1", "localhost", String.valueOf(port));
+
+	        assertTrue(robot.isHumanControlled());
+	    }
+	    finally
+	    {
+	        server.stop(0);
+	    }
+	}
+
+	@Test
+	void testRemoteClientRobotIsHumanControlledReturnsFalseWhenUnavailable()
+	{
+	    RemoteClientRobot robot = new RemoteClientRobot("Remote1", "localhost", "9999");
+
+	    assertFalse(robot.isHumanControlled());
+	}
 
     @Test
     void testNormalizeResponseWithNull()
@@ -92,7 +420,7 @@ class TournamentServerTest
     {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
 
-        server.createContext("/move", exchange -> {
+        server.createContext("/move/Remote", exchange -> {
             String response = "Cooperate";
             exchange.sendResponseHeaders(200, response.getBytes().length);
 
@@ -118,7 +446,7 @@ class TournamentServerTest
     {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
 
-        server.createContext("/move", exchange -> {
+        server.createContext("/move/Remote1", exchange -> {
             String response = "somethingElse";
             exchange.sendResponseHeaders(200, response.getBytes().length);
 
@@ -146,7 +474,7 @@ class TournamentServerTest
 
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
 
-        server.createContext("/remember/Defect", exchange -> {
+        server.createContext("/remember/Remote/Defect", exchange -> {
             rememberedMove[0] = "Defect";
             String response = "Remembered: Defect";
             exchange.sendResponseHeaders(200, response.getBytes().length);
@@ -176,7 +504,7 @@ class TournamentServerTest
 
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
 
-        server.createContext("/move", exchange -> {
+        server.createContext("/move/Remote1", exchange -> {
             String response = previousMove[0];
             exchange.sendResponseHeaders(200, response.getBytes().length);
 
@@ -185,7 +513,7 @@ class TournamentServerTest
             }
         });
 
-        server.createContext("/remember/Defect", exchange -> {
+        server.createContext("/remember/Remote1/Defect", exchange -> {
             previousMove[0] = "Defect";
             String response = "Remembered: Defect";
             exchange.sendResponseHeaders(200, response.getBytes().length);
@@ -199,7 +527,7 @@ class TournamentServerTest
         int port = server.getAddress().getPort();
 
         try {
-            RemoteClientRobot robot = new RemoteClientRobot("Remote", "localhost", String.valueOf(port));
+            RemoteClientRobot robot = new RemoteClientRobot("Remote1", "localhost", String.valueOf(port));
 
             assertEquals("Cooperate", robot.makeMove());
 
@@ -530,53 +858,63 @@ class TournamentServerTest
     }
     
     @Test
-    void testRobotClientControllerDefaultConstructorCreatesRobot()
+    void testUrlHumanRobotIsHumanControlled()
     {
-        RobotClientController controller = new RobotClientController();
+        UrlHumanRobot robot = new UrlHumanRobot("Remote1");
 
-        assertNotNull(controller.getHostedRobot());
+        assertTrue(robot.isHumanControlled());
     }
 
     @Test
-    void testRobotClientControllerSetAndGetHostedRobot()
+    void testUrlHumanRobotAcceptsShortCooperateMove()
     {
-        RobotClientController controller = new RobotClientController();
-        Robot robot = new OnlyDefectRobot("Test");
+        UrlHumanRobot robot = new UrlHumanRobot("Remote1");
 
-        controller.setHostedRobot(robot);
+        String result = robot.setNextMove("C");
 
-        assertEquals(robot, controller.getHostedRobot());
+        assertTrue(result.contains("Cooperate"));
+        assertEquals("Cooperate", robot.getNextMove());
     }
 
     @Test
-    void testRobotClientControllerMakeDecisionWithNullRobot()
+    void testUrlHumanRobotAcceptsShortDefectMove()
     {
-        RobotClientController controller = new RobotClientController();
-        controller.setHostedRobot(null);
+        UrlHumanRobot robot = new UrlHumanRobot("Remote1");
 
-        String result = controller.makeDecision();
+        String result = robot.setNextMove("D");
 
-        assertEquals("ERROR: No robot available", result);
+        assertTrue(result.contains("Defect"));
+        assertEquals("Defect", robot.getNextMove());
     }
 
     @Test
-    void testRobotClientControllerRememberOpponentMoveInvalidMove()
+    void testUrlHumanRobotRejectsNullMove()
     {
-        RobotClientController controller = new RobotClientController();
+        UrlHumanRobot robot = new UrlHumanRobot("Remote1");
 
-        String result = controller.rememberOpponentMove("");
+        String result = robot.setNextMove(null);
 
-        assertEquals("ERROR: Invalid move", result);
+        assertTrue(result.contains("ERROR"));
     }
 
     @Test
-    void testRobotClientControllerRememberOpponentMoveWithNullRobot()
+    void testUrlHumanRobotRememberOpponentMoveWithNull()
     {
-        RobotClientController controller = new RobotClientController();
-        controller.setHostedRobot(null);
+        UrlHumanRobot robot = new UrlHumanRobot("Remote1");
 
-        String result = controller.rememberOpponentMove("Cooperate");
+        robot.rememberOpponentMove(null);
 
-        assertEquals("ERROR: No robot available", result);
+        assertEquals("Unknown", robot.getLastOpponentMove());
     }
+
+    @Test
+    void testUrlHumanRobotRememberOpponentMoveWithBlank()
+    {
+        UrlHumanRobot robot = new UrlHumanRobot("Remote1");
+
+        robot.rememberOpponentMove("");
+
+        assertEquals("Unknown", robot.getLastOpponentMove());
+    }
+
 }

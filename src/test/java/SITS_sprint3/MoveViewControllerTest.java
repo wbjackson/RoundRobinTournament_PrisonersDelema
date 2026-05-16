@@ -262,4 +262,24 @@ public class MoveViewControllerTest extends ApplicationTest
         assertEquals(1, model.getObservableTournaments().size());
         assertEquals(4, model.getObservableTournaments().get(0).getId());
     }
+    
+    @Test
+    void testFetchMovesKeepsRoundLineWithTwoPlayersTogether() throws Exception
+    {
+        startMoveServer("[MATCH: A vs B, Round 1: A -> Defect, B -> Cooperate]");
+
+        interact(() ->
+        {
+            model.connectToServer("localhost", String.valueOf(server.getAddress().getPort()));
+            model.selectTournament(new TournamentInfo(1, "Live Test", true, false));
+            model.fetchMovesForSelectedTournament();
+            controller.refreshViewState();
+        });
+
+        ListView<?> moveList = lookup("#moveList").queryAs(ListView.class);
+
+        assertEquals(2, moveList.getItems().size());
+        assertTrue(moveList.getItems().contains("MATCH: A vs B"));
+        assertTrue(moveList.getItems().contains("Round 1: A -> Defect, B -> Cooperate"));
+    }
 }

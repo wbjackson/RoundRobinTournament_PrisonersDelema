@@ -66,4 +66,26 @@ class ExitMoveViewCommandTest
 
         assertEquals(0, model.getObservableTournaments().size());
     }
+    
+    @Test
+    void testExecuteWithConnectedModelButBadServerDoesNotCrash()
+    {
+        TournamentModel model = new TournamentModel();
+        model.connectToServer("localhost", "9999");
+
+        Command command = new ExitMoveViewCommand(model, null);
+
+        assertDoesNotThrow(command::execute);
+        assertEquals(0, model.getObservableTournaments().size());
+    }
+
+    @Test
+    void testExecuteWithNullAppDoesNotCrash()
+    {
+        TournamentModel model = new TournamentModel();
+
+        Command command = new ExitMoveViewCommand(model, null);
+
+        assertDoesNotThrow(command::execute);
+    }
 }

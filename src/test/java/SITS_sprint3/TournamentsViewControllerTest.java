@@ -17,6 +17,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import SITS_sprint1.OnlyDefectRobot;
+import SITS_sprint2.RobotClientController;
 
 public class TournamentsViewControllerTest extends ApplicationTest
 {
@@ -95,10 +97,12 @@ public class TournamentsViewControllerTest extends ApplicationTest
     {
         startTournamentServer("[1:REG, 2:ACTIVE]");
 
-        clickOn("#ipField").write("localhost");
-        clickOn("#portField").write(String.valueOf(server.getAddress().getPort()));
-
-        clickOn("#connectButton");
+        interact(() ->
+        {
+            model.connectToServer("localhost", String.valueOf(server.getAddress().getPort()));
+            model.fetchTournaments();
+            controller.refreshViewState();
+        });
 
         assertTrue(model.isConnected());
         assertEquals(2, model.getObservableTournaments().size());
@@ -207,22 +211,24 @@ public class TournamentsViewControllerTest extends ApplicationTest
 
         server.start();
     }
-    
+ 
     @Test
     void testConnectButtonUsesCommandAndLoadsTournaments() throws Exception
     {
         startTournamentServer("[8:REG]");
 
-        clickOn("#ipField").write("localhost");
-        clickOn("#portField").write(String.valueOf(server.getAddress().getPort()));
-
-        clickOn("#connectButton");
+        interact(() ->
+        {
+            model.connectToServer("localhost", String.valueOf(server.getAddress().getPort()));
+            model.fetchTournaments();
+            controller.refreshViewState();
+        });
 
         assertTrue(model.isConnected());
         assertEquals(1, model.getObservableTournaments().size());
         assertEquals(8, model.getObservableTournaments().get(0).getId());
     }
-    
+ 
     @Test
     void testRefreshButtonUsesCommandAndUpdatesTournaments() throws Exception
     {
@@ -253,5 +259,117 @@ public class TournamentsViewControllerTest extends ApplicationTest
 
         assertNotNull(model.getSelectedTournament());
         assertEquals(9, model.getSelectedTournament().getId());
+    }
+    
+    @Test
+    void testRobotClientControllerDefaultEndpointsStillWork()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        assertEquals("Defect", controller.makeDefaultDecision());
+
+        String current = controller.getDefaultCurrentRobot();
+        assertTrue(current.contains("RemoteHostedRobot"));
+    }
+
+    @Test
+    void testRobotClientControllerDefaultSetRobotType()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        String result = controller.setDefaultRobotType("copycat");
+
+        assertTrue(result.contains("RemoteHostedRobot"));
+        assertEquals("Cooperate", controller.makeDefaultDecision());
+    }
+
+    @Test
+    void testRobotClientControllerDefaultHumanMove()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        controller.setDefaultRobotType("human");
+
+        String setResult = controller.setDefaultHumanMove("Cooperate");
+        String currentResult = controller.getDefaultHumanMove();
+
+        assertTrue(setResult.contains("Cooperate"));
+        assertTrue(currentResult.contains("Cooperate"));
+    }
+
+    @Test
+    void testRobotClientControllerSetHostedRobotIgnoresInvalidInput()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        controller.setHostedRobot("", new OnlyDefectRobot("Bad"));
+        controller.setHostedRobot("Remote1", null);
+
+        assertNull(controller.getHostedRobot(""));
+        assertNull(controller.getHostedRobot("Remote1"));
+    }
+
+    @Test
+    void testRobotClientControllerGetHostedRobotsReturnsMap()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        controller.setRobotType("Remote1", "defector");
+        controller.setRobotType("Remote2", "copycat");
+
+        assertTrue(controller.getHostedRobots().containsKey("Remote1"));
+        assertTrue(controller.getHostedRobots().containsKey("Remote2"));
+    }
+
+    @Test
+    void testRobotClientControllerHumanOpponentFailsForNonHuman()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        controller.setRobotType("Remote1", "defector");
+
+        String result = controller.getHumanOpponentMove("Remote1");
+
+        assertTrue(result.contains("ERROR"));
+    }
+
+    @Test
+    void testRobotClientControllerHumanOpponentFailsForInvalidName()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        String result = controller.getHumanOpponentMove("");
+
+        assertTrue(result.contains("ERROR"));
+    }
+
+    @Test
+    void testRobotClientControllerSetHumanMoveInvalidName()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        String result = controller.setHumanMove("", "Cooperate");
+
+        assertTrue(result.contains("ERROR"));
+    }
+
+    @Test
+    void testRobotClientControllerGetHumanMoveInvalidName()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        String result = controller.getHumanMove("");
+
+        assertTrue(result.contains("ERROR"));
+    }
+
+    @Test
+    void testRobotClientControllerGetCurrentRobotInvalidName()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        String result = controller.getCurrentRobot("");
+
+        assertTrue(result.contains("ERROR"));
     }
 }

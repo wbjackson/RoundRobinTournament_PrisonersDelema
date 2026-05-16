@@ -45,6 +45,11 @@ public abstract class Robot
         record = 0;
     }
 
+    public boolean isHumanControlled()
+    {
+        return false;
+    }
+
     public abstract String makeMove();
 
     public abstract void rememberOpponentMove(String move);

@@ -77,4 +77,38 @@ public class TournamentInfoTest
         assertNotEquals(a.getId(), b.getId());
         assertNotEquals(a.getName(), b.getName());
     }
+    
+    @Test
+    void testMoveViewCanBeCreated()
+    {
+        MoveView view = new MoveView();
+
+        assertNotNull(view);
+    }
+
+    @Test
+    void testTournamentsViewCanBeCreated()
+    {
+        TournamentsView view = new TournamentsView();
+
+        assertNotNull(view);
+    }
+
+    @Test
+    void testSceneManagerPaths()
+    {
+        assertEquals("/tournaments-view.fxml", SceneManager.TOURNAMENTS_FXML);
+        assertEquals("/move-view.fxml", SceneManager.MOVE_FXML);
+    }
+    
+    @Test
+    void testTournamentInfoInactiveNotRegistrationIsClosed()
+    {
+        TournamentInfo info = new TournamentInfo(9, "Closed Tournament", false, false);
+
+        assertFalse(info.isActive());
+        assertFalse(info.isRegistrationOpen());
+        assertEquals("Closed", info.getStatusText());
+        assertTrue(info.toString().contains("Closed"));
+    }
 }

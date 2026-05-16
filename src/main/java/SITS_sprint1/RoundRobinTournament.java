@@ -62,7 +62,21 @@ public class RoundRobinTournament extends Tournament
             ", Score = " + best.getScore()
         );
         game.notifyScoreObserver("=====================================");
+        
+        game.notifyScoreObserver("=====================================");
+        game.notifyScoreObserver(
+            "TOURNAMENT RESULT: Winner = " + best.getName() +
+            ", Record = " + best.getRecord() +
+            ", Score = " + best.getScore()
+        );
+        game.notifyScoreObserver("=====================================");
 
+        game.notifyMoveObserver("");
+        game.notifyMoveObserver("TOURNAMENT WINNER: " + best.getName()
+                + " | Record: " + best.getRecord()
+                + " | Score: " + best.getScore());
+        game.notifyMoveObserver("=====================================");
+        
         return best;
     }
 }

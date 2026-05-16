@@ -118,11 +118,7 @@ public class TournamentModel
         }
 
         String cleanedMove = move.trim();
-
-        if (!moves.contains(cleanedMove))
-        {
-            moves.add(cleanedMove);
-        }
+        moves.add(cleanedMove);
     }
 
     public ObservableList<String> getObservableMoves()

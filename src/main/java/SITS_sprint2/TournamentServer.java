@@ -17,6 +17,14 @@ import SITS_sprint1.Tournament;
 				// Stores and manages the tournaments after spring server is running. '
 				// starts tournaments, REG, ACTIVE, FINISHED
 				//stores move history
+
+					
+//RobotClientApplication.java is the Spring Boot launcher.
+//TournamentServer.java stores and manages tournament state.
+//RobotClientController.java hosts the remote robot endpoints.
+//TournamentServerController.java exposes tournament server endpoints.
+//RemoteClientViewerApp.java launches the GUI spectator.
+
 @SpringBootApplication
 public class TournamentServer
 {

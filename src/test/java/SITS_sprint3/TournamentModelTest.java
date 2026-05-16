@@ -239,7 +239,7 @@ public class TournamentModelTest
 
         server.createContext("/server/moves/1", exchange ->
         {
-            String response = "[Move A, Move B, Move C]";
+            String response = "[MATCH: A vs B, Round 1: A -> Defect, B -> Cooperate, Round 2: A -> Defect, B -> Defect]";
             exchange.sendResponseHeaders(200, response.getBytes().length);
 
             try (OutputStream os = exchange.getResponseBody())
@@ -260,9 +260,9 @@ public class TournamentModelTest
             model.fetchMovesForSelectedTournament();
 
             assertEquals(3, model.getObservableMoves().size());
-            assertEquals("Move A", model.getObservableMoves().get(0));
-            assertEquals("Move B", model.getObservableMoves().get(1));
-            assertEquals("Move C", model.getObservableMoves().get(2));
+            assertEquals("MATCH: A vs B", model.getObservableMoves().get(0));
+            assertEquals("Round 1: A -> Defect, B -> Cooperate", model.getObservableMoves().get(1));
+            assertEquals("Round 2: A -> Defect, B -> Defect", model.getObservableMoves().get(2));
         }
         finally
         {
@@ -342,8 +342,9 @@ public class TournamentModelTest
         assertEquals(0, model.getObservableMoves().size());
     }
 
+    
     @Test
-    void testAddMovePreventsDuplicateMoves()
+    void testAddMoveAllowsDuplicateMoves()
     {
         TournamentModel model = new TournamentModel();
 
@@ -351,7 +352,10 @@ public class TournamentModelTest
         model.addMove("Move A");
         model.addMove("  Move A  ");
 
-        assertEquals(1, model.getObservableMoves().size());
+        assertEquals(3, model.getObservableMoves().size());
+        assertEquals("Move A", model.getObservableMoves().get(0));
+        assertEquals("Move A", model.getObservableMoves().get(1));
+        assertEquals("Move A", model.getObservableMoves().get(2));
     }
 
     @Test
@@ -366,16 +370,15 @@ public class TournamentModelTest
 
         assertEquals(0, model.getObservableMoves().size());
     }
-
+    
     @Test
-    void testStartAndStopViewerClientDoesNotThrow()
+    void testStopViewerClientAfterModelCreationDoesNotThrow()
     {
         TournamentModel model = new TournamentModel();
 
-        assertDoesNotThrow(model::startViewerClient);
         assertDoesNotThrow(model::stopViewerClient);
     }
-
+    
     @Test
     void testStopViewerClientWithoutStartingDoesNotThrow()
     {

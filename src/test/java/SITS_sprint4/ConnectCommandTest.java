@@ -13,8 +13,24 @@ import SITS_sprint3.TournamentModel;
 
 class ConnectCommandTest
 {
+    private static class TestTournamentModel extends TournamentModel
+    {
+        private boolean startViewerClientCalled = false;
+
+        @Override
+        public void startViewerClient()
+        {
+            startViewerClientCalled = true;
+        }
+
+        public boolean wasStartViewerClientCalled()
+        {
+            return startViewerClientCalled;
+        }
+    }
+
     @Test
-    void testExecuteConnectsAndFetchesTournaments() throws Exception
+    void testExecuteConnectsStartsViewerClientAndFetchesTournaments() throws Exception
     {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
 
@@ -33,7 +49,7 @@ class ConnectCommandTest
 
         try
         {
-            TournamentModel model = new TournamentModel();
+            TestTournamentModel model = new TestTournamentModel();
 
             Command command = new ConnectCommand(
                     model,
@@ -44,7 +60,9 @@ class ConnectCommandTest
             command.execute();
 
             assertTrue(model.isConnected());
+            assertTrue(model.wasStartViewerClientCalled());
             assertEquals(1, model.getObservableTournaments().size());
+            assertEquals(1, model.getObservableTournaments().get(0).getId());
         }
         finally
         {
@@ -63,24 +81,52 @@ class ConnectCommandTest
     @Test
     void testExecuteWithBlankIpDoesNothing()
     {
-        TournamentModel model = new TournamentModel();
+        TestTournamentModel model = new TestTournamentModel();
 
         Command command = new ConnectCommand(model, "", "8081");
 
         command.execute();
 
         assertFalse(model.isConnected());
+        assertFalse(model.wasStartViewerClientCalled());
     }
 
     @Test
     void testExecuteWithBlankPortDoesNothing()
     {
-        TournamentModel model = new TournamentModel();
+        TestTournamentModel model = new TestTournamentModel();
 
         Command command = new ConnectCommand(model, "localhost", "");
 
         command.execute();
 
         assertFalse(model.isConnected());
+        assertFalse(model.wasStartViewerClientCalled());
+    }
+
+    @Test
+    void testExecuteWithNullIpDoesNothing()
+    {
+        TestTournamentModel model = new TestTournamentModel();
+
+        Command command = new ConnectCommand(model, null, "8081");
+
+        command.execute();
+
+        assertFalse(model.isConnected());
+        assertFalse(model.wasStartViewerClientCalled());
+    }
+
+    @Test
+    void testExecuteWithNullPortDoesNothing()
+    {
+        TestTournamentModel model = new TestTournamentModel();
+
+        Command command = new ConnectCommand(model, "localhost", null);
+
+        command.execute();
+
+        assertFalse(model.isConnected());
+        assertFalse(model.wasStartViewerClientCalled());
     }
 }

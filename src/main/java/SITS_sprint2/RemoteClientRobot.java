@@ -1,15 +1,17 @@
 package SITS_sprint2;
 
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriUtils;
+
+import java.nio.charset.StandardCharsets;
+
 import SITS_sprint1.Robot;
 
 public class RemoteClientRobot extends Robot
 {
     private String ip;
     private String port;
-    private RestClient restClient; // remote representation of Network/client behavior for robots (RRPD)
-    
-    								//Game specific
+    private RestClient restClient;
 
     public RemoteClientRobot(String name, String ip, String port)
     {
@@ -36,12 +38,37 @@ public class RemoteClientRobot extends Robot
         return "Defect";
     }
 
+    private String getEncodedName()
+    {
+        return UriUtils.encodePathSegment(getName(), StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public boolean isHumanControlled()
+    {
+        try
+        {
+            String url = "http://" + ip + ":" + port + "/robot/isHuman/" + getEncodedName();
+
+            String response = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(String.class);
+
+            return response != null && response.trim().equalsIgnoreCase("true");
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
     @Override
     public String makeMove()
     {
         try
         {
-            String url = "http://" + ip + ":" + port + "/move";
+            String url = "http://" + ip + ":" + port + "/move/" + getEncodedName();
 
             String response = restClient.get()
                     .uri(url)
@@ -53,7 +80,7 @@ public class RemoteClientRobot extends Robot
         }
         catch (Exception e)
         {
-            System.out.println("Error contacting client: " + e.getMessage());
+            System.out.println("Error contacting client for " + getName() + ": " + e.getMessage());
             return "Defect";
         }
     }
@@ -63,7 +90,8 @@ public class RemoteClientRobot extends Robot
     {
         try
         {
-            String url = "http://" + ip + ":" + port + "/remember/" + move;
+            String encodedMove = UriUtils.encodePathSegment(move, StandardCharsets.UTF_8);
+            String url = "http://" + ip + ":" + port + "/remember/" + getEncodedName() + "/" + encodedMove;
 
             restClient.post()
                     .uri(url)
@@ -72,7 +100,7 @@ public class RemoteClientRobot extends Robot
         }
         catch (Exception e)
         {
-            System.out.println("Error sending opponent move to client: " + e.getMessage());
+            System.out.println("Error sending opponent move to client for " + getName() + ": " + e.getMessage());
         }
     }
 }

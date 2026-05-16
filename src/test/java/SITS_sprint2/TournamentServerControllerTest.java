@@ -84,54 +84,117 @@ class TournamentServerControllerTest
     }
     
     @Test
-    void testRobotClientController_DefaultConstructor()
+    void testRobotClientControllerDefaultConstructorCreatesDefaultNamedRobot()
     {
         RobotClientController controller = new RobotClientController();
 
-        assertNotNull(controller.getHostedRobot());
+        assertNotNull(controller.getHostedRobot("RemoteHostedRobot"));
+        assertEquals("Defect", controller.makeDecision("RemoteHostedRobot"));
     }
 
     @Test
-    void testRobotClientController_SetAndGetHostedRobot()
+    void testRobotClientControllerSetAndGetNamedHostedRobot()
     {
         RobotClientController controller = new RobotClientController();
         Robot robot = new OnlyDefectRobot("Test");
-        
-        controller.setHostedRobot(robot);
 
-        assertEquals(robot, controller.getHostedRobot());
+        controller.setHostedRobot("Remote1", robot);
+
+        assertEquals(robot, controller.getHostedRobot("Remote1"));
     }
 
     @Test
-    void testRobotClientController_MakeDecisionWithNullRobot()
+    void testRobotClientControllerTwoRemoteRobotsCanHaveDifferentTypes()
     {
         RobotClientController controller = new RobotClientController();
-        controller.setHostedRobot(null);
 
-        String result = controller.makeDecision();
+        controller.setRobotType("Remote1", "defector");
+        controller.setRobotType("Remote2", "copycat");
+
+        assertEquals("Defect", controller.makeDecision("Remote1"));
+        assertEquals("Cooperate", controller.makeDecision("Remote2"));
+    }
+
+    @Test
+    void testRobotClientControllerNamedRememberOpponentMove()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        controller.setRobotType("Remote1", "copycat");
+
+        assertEquals("Cooperate", controller.makeDecision("Remote1"));
+
+        controller.rememberOpponentMove("Remote1", "Defect");
+
+        assertEquals("Defect", controller.makeDecision("Remote1"));
+    }
+
+    @Test
+    void testRobotClientControllerMakeDecisionWithMissingRobotDefaultsToDefect()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        String result = controller.makeDecision("MissingRobot");
+
+        assertEquals("Defect", result);
+    }
+
+    @Test
+    void testRobotClientControllerRememberOpponentMoveInvalidName()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        String result = controller.rememberOpponentMove("", "Cooperate");
 
         assertTrue(result.contains("ERROR"));
     }
 
     @Test
-    void testRobotClientController_RememberOpponentMove_Invalid()
+    void testRobotClientControllerRememberOpponentMoveInvalidMove()
     {
         RobotClientController controller = new RobotClientController();
 
-        String result = controller.rememberOpponentMove("");
+        controller.setRobotType("Remote1", "copycat");
+
+        String result = controller.rememberOpponentMove("Remote1", "");
 
         assertTrue(result.contains("ERROR"));
     }
 
     @Test
-    void testRobotClientController_RememberOpponentMove_NullRobot()
+    void testRobotClientControllerRememberOpponentMoveMissingRobot()
     {
         RobotClientController controller = new RobotClientController();
-        controller.setHostedRobot(null);
 
-        String result = controller.rememberOpponentMove("Cooperate");
+        String result = controller.rememberOpponentMove("MissingRobot", "Cooperate");
 
         assertTrue(result.contains("ERROR"));
+    }
+
+    @Test
+    void testRobotClientControllerSetHumanAndHumanMoveByName()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        controller.setRobotType("Remote1", "human");
+
+        String setResult = controller.setHumanMove("Remote1", "Defect");
+        String currentResult = controller.getHumanMove("Remote1");
+
+        assertTrue(setResult.contains("Defect"));
+        assertTrue(currentResult.contains("Defect"));
+    }
+
+    @Test
+    void testRobotClientControllerIsHumanByName()
+    {
+        RobotClientController controller = new RobotClientController();
+
+        controller.setRobotType("Remote1", "human");
+        controller.setRobotType("Remote2", "random");
+
+        assertEquals("true", controller.isHumanRobot("Remote1"));
+        assertEquals("false", controller.isHumanRobot("Remote2"));
     }
     
     @Test
