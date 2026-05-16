@@ -24,7 +24,7 @@
 
     <Label style="-fx-font-size: 20px;" text="Available Tournaments:" />
 
-    <!-- 🔥 THIS IS THE IMPORTANT PART -->
+
     <ListView fx:id="tournamentList" VBox.vgrow="ALWAYS" />
 
     <Button fx:id="refreshButton" onAction="#handleRefresh" prefHeight="25.0" prefWidth="85.0" text="Refresh" />

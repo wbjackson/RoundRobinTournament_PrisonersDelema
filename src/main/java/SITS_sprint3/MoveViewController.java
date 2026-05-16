@@ -15,7 +15,7 @@ public class MoveViewController
     private TournamentModel model;
     private RemoteClientViewerApp app;
 
-    private CommandInvoker commandInvoker;	 
+    private CommandInvoker commandInvoker;
 
     private Timeline refreshTimeline;
 
@@ -36,8 +36,6 @@ public class MoveViewController
         {
             moveList.setItems(model.getObservableMoves());
         }
-
-        startAutoRefresh();
     }
 
     public void setApp(RemoteClientViewerApp app)
@@ -59,8 +57,9 @@ public class MoveViewController
         }
 
         refreshTimeline = new Timeline(
-            new KeyFrame(Duration.seconds(1), e -> {
-                if (model != null && model.isConnected())
+            new KeyFrame(Duration.seconds(1), e ->
+            {
+                if (model != null && model.isConnected() && model.getSelectedTournament() != null)
                 {
                     model.fetchMovesForSelectedTournament();
                 }
@@ -109,6 +108,13 @@ public class MoveViewController
                 tournamentTitleLabel.setText("Tournament: " + selected.getName());
             }
         }
+
+        if (model.isConnected() && model.getSelectedTournament() != null)
+        {
+            model.fetchMovesForSelectedTournament();
+        }
+
+        startAutoRefresh();
     }
 
     @FXML

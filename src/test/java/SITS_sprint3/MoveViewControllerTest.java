@@ -132,6 +132,7 @@ public class MoveViewControllerTest extends ApplicationTest
         {
             model.connectToServer("localhost", String.valueOf(server.getAddress().getPort()));
             model.selectTournament(new TournamentInfo(1, "Live Test", true, false));
+            controller.refreshViewState();
         });
 
         sleep(1200);
@@ -210,8 +211,10 @@ public class MoveViewControllerTest extends ApplicationTest
     }
     
     @Test
-    void testGetRefreshTimelineAfterSetModel()
+    void testGetRefreshTimelineAfterRefreshViewState()
     {
+        interact(() -> controller.refreshViewState());
+
         assertNotNull(controller.getRefreshTimeline());
     }
 
@@ -281,5 +284,16 @@ public class MoveViewControllerTest extends ApplicationTest
         assertEquals(2, moveList.getItems().size());
         assertTrue(moveList.getItems().contains("MATCH: A vs B"));
         assertTrue(moveList.getItems().contains("Round 1: A -> Defect, B -> Cooperate"));
+    }
+    
+    @Test
+    void testRefreshViewStateStartsAutoRefresh()
+    {
+        interact(() ->
+        {
+            controller.refreshViewState();
+        });
+
+        assertNotNull(controller.getRefreshTimeline());
     }
 }
